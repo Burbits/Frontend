@@ -1,0 +1,1577 @@
+<title>Burbit Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Silkscreen&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#FFFFFF; --s0:#F7F7F8; --s1:#FFFFFF; --s2:#F3F4F6; --line:#ECEDEF; --line2:#DFE1E5; --empty:#ECEDEF;
+  --tx:#0E0F11; --tx2:#3C4049; --mut:#6B7079; --fnt:#7A7F88;
+  --yes:#0B8F50; --no:#2563EB; --cur:#E60000; --curd:#F4B4B4; --info:#475569; --brand:#F70000;
+  --yes-t:rgba(11,143,80,.10); --no-t:rgba(37,99,235,.10); --cur-t:rgba(230,0,0,.08); --info-t:rgba(71,85,105,.10); --mut-t:rgba(139,143,152,.12);
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --px:'Silkscreen',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--tx);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.45}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.px{font-family:var(--px);font-weight:400;letter-spacing:.03em}
+.mut{color:var(--mut)} .fnt{color:var(--fnt)} .c-yes{color:var(--yes)} .c-no{color:var(--no)} .c-cur{color:var(--cur)} .c-info{color:var(--info)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* shell */
+.app{display:flex;min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;width:64px;flex-shrink:0;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 0}
+.rail .logo{width:36px;height:36px;margin-bottom:14px;display:block;border:0;background:none;padding:0}
+.navb{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:0;background:transparent;color:var(--mut)}
+.navb:hover{color:var(--tx);background:var(--s1)}
+.navb[aria-current="page"]{background:var(--s2);color:var(--tx)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;height:56px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 24px}
+.wordmark{font-family:var(--px);font-size:18px;letter-spacing:.05em}
+.search{display:flex;align-items:center;gap:8px;width:340px;height:36px;padding:0 12px;background:var(--s1);border:1px solid var(--line2);border-radius:4px;color:var(--mut)}
+.search input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px}
+.search input::placeholder{color:var(--fnt)}
+.grow{flex:1}
+.clock{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+.clock b{font:500 13px var(--mono)} .clock span{font-size:10px;color:var(--fnt)}
+.xbtn{height:32px;padding:0 10px;border-radius:4px;border:1px solid rgba(230,0,0,.4);background:transparent;color:var(--cur);font-family:var(--px);font-size:11px;display:flex;align-items:center;gap:6px}
+.xbtn[aria-pressed="true"]{background:var(--cur);color:#FFFFFF;border-color:var(--cur)}
+.net{font-family:var(--px);font-size:11px;color:var(--info);border:1px solid rgba(71,85,105,.35);border-radius:4px;padding:4px 8px}
+.wal{height:36px;padding:0 14px;background:var(--s2);border:1px solid var(--line2);border-radius:4px;font:500 13px var(--mono);display:flex;align-items:center;gap:8px}
+.wal i{width:8px;height:8px;background:var(--yes)}
+  .wal.off{background:var(--cur);color:#FFFFFF;border-color:var(--cur);font-family:var(--sans);font-weight:600}
+.view{padding:24px 24px 120px;display:flex;flex-direction:column;gap:18px;min-width:0}
+
+/* generic */
+.panel{background:var(--s1);border:1px solid var(--line);border-radius:8px}
+.btn{height:36px;padding:0 14px;border-radius:4px;border:1px solid var(--line2);background:var(--s2);font-weight:600;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:#C9CCD2}
+.btn.solid-yes{background:var(--yes);border-color:var(--yes);color:#FFFFFF}
+.btn.solid-no{background:var(--no);border-color:var(--no);color:#FFFFFF}
+.btn.solid-cur{background:var(--cur);border-color:var(--cur);color:#FFFFFF}
+.btn.solid-tx{background:var(--tx);border-color:var(--tx);color:#FFFFFF}
+.btn.ghost{background:transparent}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:3px;font-family:var(--px);font-size:10px;white-space:nowrap}
+.badge i{width:6px;height:6px;background:currentColor;flex-shrink:0}
+.b-live{color:var(--yes);background:var(--yes-t)} .b-auc{color:var(--info);background:var(--info-t)} .b-cur{color:var(--cur);background:var(--cur-t)}
+.b-mut{color:var(--mut);background:var(--mut-t)} .b-no{color:var(--no);background:var(--no-t)}
+.tag{font-family:var(--px);font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid var(--line2);color:var(--mut);white-space:nowrap}
+.h2{font-family:var(--px);font-size:12px;font-weight:400;letter-spacing:.04em}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fnt)}
+.ident{flex-shrink:0;background:#F3F4F6;border:1px solid var(--line2);display:grid;grid-template-columns:repeat(5,1fr)}
+.ident span{aspect-ratio:1}
+.blocks{display:grid;gap:2px}
+.blocks span{display:block}
+.empty{padding:32px;text-align:center;color:var(--mut);border:1px dashed var(--line2);border-radius:8px}
+
+/* feed */
+.feed-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.feed-head h1{font-family:var(--px);font-weight:400;font-size:26px;line-height:30px;letter-spacing:.02em}
+.feed-head p{color:var(--mut);font-size:13px;margin-top:6px;max-width:60ch}
+.kpis{display:flex;gap:24px}
+.kpis div{display:flex;flex-direction:column;align-items:flex-end}
+.kpis b{font:500 18px var(--mono)} .kpis span{font-size:11px;color:var(--mut)}
+.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{height:32px;padding:0 12px;border-radius:9999px;border:1px solid var(--line2);background:transparent;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.chip span{font:11px var(--mono);color:var(--mut)}
+.chip[aria-pressed="true"]{background:var(--tx);border-color:var(--tx);color:#FFFFFF}
+.chip[aria-pressed="true"] span{color:#B0B4BB}
+.table{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--s0)}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) 190px 176px 128px 76px 124px;column-gap:16px;align-items:center;min-height:64px;padding:8px 16px;border-bottom:1px solid var(--s2)}
+.frow:last-child{border-bottom:0}
+.frow.hd{min-height:34px;padding:0 16px;border-bottom:1px solid var(--line);font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--fnt)}
+.frow.auc{background:rgba(71,85,105,.04)}
+.frow.done{opacity:.72}
+.mcell{display:flex;align-items:center;gap:12px;min-width:0;background:none;border:0;padding:0;text-align:left}
+.mcell .meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut)}
+.mcell .tk{font:600 12px var(--mono);color:var(--tx)}
+.mcell .q{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.mcell:hover .q{text-decoration:underline;text-underline-offset:3px}
+.curvecell{display:flex;align-items:center;gap:10px}
+.odds2{display:flex;gap:6px}
+.ob{flex:1;height:32px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:4px;font-size:12px;font-weight:600;border:1px solid}
+.ob .mono{font-weight:500}
+.ob.y{color:var(--yes);background:rgba(11,143,80,.10);border-color:rgba(11,143,80,.25)}
+.ob.n{color:var(--no);background:rgba(37,99,235,.10);border-color:rgba(37,99,235,.25)}
+.ob.y.ind{background:transparent;border-style:dashed;border-color:rgba(11,143,80,.45)}
+.ob.n.ind{background:transparent;border-style:dashed;border-color:rgba(37,99,235,.45)}
+.ob.win.y{background:var(--yes);color:#FFFFFF;border-color:var(--yes)}
+.ob.win.n{background:var(--no);color:#FFFFFF;border-color:var(--no)}
+.ob.lose{background:transparent;color:#A0A4AB;border-color:var(--line2)}
+.ob.vd{background:transparent;color:var(--mut);border-color:var(--line2);border-style:dashed}
+.oicell{display:flex;flex-direction:column;gap:5px;font-size:12px}
+.bar3{height:3px;background:var(--empty)} .bar3 div{height:3px}
+.right{text-align:right;display:flex;justify-content:flex-end}
+.feed-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:80px}
+.pcard{display:flex;flex-direction:column;gap:6px;padding:12px;background:var(--s1);border:1px solid var(--line);border-radius:6px;text-align:left;width:100%}
+.pcard:hover{border-color:var(--line2)}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--s2);font-size:13px}
+.srow:last-child{border-bottom:0}
+
+/* home cards */
+.homeintro p{color:var(--mut);font-size:13px}
+.cats{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.cats button{height:42px;padding:0 12px;background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);font-weight:600;white-space:nowrap}
+.cats button:hover{color:var(--tx)}
+.cats button[aria-pressed="true"]{color:var(--tx);border-bottom-color:var(--tx)}
+.srcrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lpi{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font:600 8px var(--mono);font-style:normal;color:#FFFFFF}
+.src{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--mut);white-space:nowrap}
+.src i{width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;font:600 7px var(--mono);font-style:normal;color:#FFFFFF}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card:hover{border-color:var(--line2)}
+.card.auc{border-color:rgba(71,85,105,.35)}
+.card.done{opacity:.75}
+.ctop{display:flex;align-items:center;gap:10px}
+.ctop .meta{display:flex;align-items:center;gap:6px;font-size:12px}
+.ctop .tk{font:600 12px var(--mono)}
+.ctop .src{align-self:flex-start}
+.cq{font-size:16px;font-weight:600;line-height:22px;min-height:44px;background:none;border:0;padding:0;text-align:left;text-wrap:balance}
+.cq:hover{text-decoration:underline;text-underline-offset:3px}
+.chance{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.chance b{font:500 28px/32px var(--mono);font-variant-numeric:tabular-nums}
+.chance span{font-size:12px;color:var(--mut)}
+.ctx{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut)}
+.cfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--mut);padding-top:10px;border-top:1px solid var(--line)}
+
+.venue{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 6px;border-radius:3px;font-size:11px;font-weight:600;white-space:nowrap;align-self:flex-start;border:1px solid var(--line2);color:var(--tx2)}
+.venue i{width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;font:600 6px var(--mono);font-style:normal;background:#3B5B9A;color:#fff}
+.pmicon{width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#F3F4F6;border:1px solid var(--line2);font:600 11px var(--mono);color:var(--mut)}
+.seg2{display:flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+.seg2 button{height:32px;padding:0 12px;border:0;background:transparent;color:var(--mut);font-size:13px;font-weight:500;white-space:nowrap}
+.seg2 button span{font:11px var(--mono);color:var(--fnt)}
+.seg2 button[aria-pressed="true"]{background:var(--s2);color:var(--tx)}
+.evq{font-size:16px;font-weight:600}
+.evrows{display:flex;flex-direction:column}
+.evrow{display:grid;grid-template-columns:minmax(0,1fr) 44px auto auto;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--s2)}
+.evrow:last-child{border-bottom:0}
+.evname{background:none;border:0;padding:0;text-align:left;font-size:13px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evname:hover{color:var(--tx);text-decoration:underline;text-underline-offset:3px}
+.evpct{text-align:right;font-size:14px}
+.mini{height:28px;padding:0 10px;border-radius:4px;font-size:12px;font-weight:600;border:1px solid}
+.mini.y{color:var(--yes);background:rgba(11,143,80,.10);border-color:rgba(11,143,80,.25)}
+.mini.n{color:var(--no);background:rgba(37,99,235,.10);border-color:rgba(37,99,235,.25)}
+.evlist{padding:6px 16px}
+.evlist-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0}
+.evline{display:grid;grid-template-columns:minmax(0,1fr) 64px auto auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.evline.on{box-shadow:inset 3px 0 0 var(--cur);padding-left:10px}
+.evline .evname{display:flex;flex-direction:column;gap:2px;white-space:normal}
+.evline .evname b{font-size:14px;color:var(--tx)}
+.evline .evpct{font-size:18px}
+.evline .mini{height:34px}
+.mstats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:14px 20px}
+.mstats div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mstats b{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mstats span{font-size:11px;color:var(--mut)}
+@media (max-width:700px){.mstats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bkseg{display:flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+.bkseg button{height:28px;padding:0 12px;border:0;background:transparent;font-size:12px;font-weight:600;color:var(--mut)}
+.bkseg button[aria-pressed="true"].y{background:var(--yes);color:#fff}
+.bkseg button[aria-pressed="true"].n{background:var(--no);color:#fff}
+.tk-top{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 0}
+.tk-bs{display:flex;gap:16px}
+.tk-bs button{background:none;border:0;padding:6px 0;font:600 13px var(--mono);letter-spacing:.06em;color:var(--mut);border-bottom:2px solid transparent}
+.tk-bs button[aria-selected="true"]{color:var(--tx);border-bottom-color:var(--cur)}
+.otype select,.kin select{background:transparent;border:0;font:600 13px var(--mono);letter-spacing:.04em;color:var(--tx);text-transform:uppercase;cursor:pointer}
+.otype select{padding:6px 0}
+.tk-q{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;line-height:20px}
+.ynpill{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:var(--s2);border-radius:9999px;padding:3px}
+.yn{height:38px;border:0;border-radius:9999px;background:transparent;font:600 13px var(--mono);color:var(--mut)}
+.yn.y[aria-pressed="true"]{background:var(--yes);color:#fff}
+.yn.n[aria-pressed="true"]{background:var(--no);color:#fff}
+.kfield{display:flex;align-items:center;justify-content:space-between;gap:12px;height:48px;padding:0 14px;border:1px solid var(--line2);border-radius:6px}
+.kfield:focus-within{border-color:var(--tx)}
+.kfield label{font-size:13px;font-weight:500;white-space:nowrap}
+.kin{display:flex;align-items:center;gap:4px;min-width:0;flex:1;justify-content:flex-end}
+.kin input{width:100%;min-width:0;border:0;outline:none;background:transparent;font:600 18px var(--mono);text-align:right}
+.kin select{text-transform:none;font:500 14px var(--sans);text-align:right}
+.kline{font-size:12px;color:var(--mut);margin-top:-6px}
+.kcheck{display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 14px;border:1px solid var(--line2);border-radius:6px;font-size:13px;cursor:pointer}
+.kcheck input{width:18px;height:18px;margin:0;accent-color:var(--tx)}
+.ksum dt{display:flex;flex-direction:column;color:var(--tx);font-weight:500}
+.ksum dt small{font-size:11px;color:var(--mut);font-weight:400}
+.ksum dd.big{font-size:15px}
+.ksum dd.pay{font-size:24px;font-weight:600}
+.review{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.tk-act{display:flex;border-bottom:1px solid var(--line)}
+.tk-act button{flex:1;height:46px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--mut);font-weight:600;font-size:15px}
+.tk-act button[aria-selected="true"]{border-bottom-color:var(--cur);color:var(--tx)}
+.hold{font-size:11px;color:var(--mut);text-align:center;margin-top:-6px}
+.cats .lpi{margin-right:6px;vertical-align:-2px}
+.crumbs button[data-act="cat"]{color:var(--mut)}
+
+/* featured hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px}
+.hcard{background:var(--s1);border:1px solid var(--line2);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.hcard .hq{font-size:24px;line-height:30px;font-weight:600;letter-spacing:-.01em;text-wrap:balance;background:none;border:0;padding:0;text-align:left}
+.hcard .hq:hover{text-decoration:underline;text-underline-offset:4px}
+.hmain{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;align-items:stretch}
+.hodds{display:flex;flex-direction:column;gap:10px;justify-content:space-between}
+.hodds .big{font:500 48px/52px var(--mono);font-variant-numeric:tabular-nums}
+.hstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-top:12px;border-top:1px solid var(--line)}
+.hstats div{display:flex;flex-direction:column;gap:2px}
+.hstats b{font:500 13px var(--mono)} .hstats span{font-size:11px;color:var(--mut)}
+.hnav{display:flex;align-items:center;gap:10px}
+.hnav .arrow{width:32px;height:32px;border-radius:4px;border:1px solid var(--line2);background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--tx)}
+.dots{display:flex;gap:4px}
+.dots button{width:18px;height:6px;border:0;padding:0;background:var(--empty)}
+.dots button[aria-current="true"]{background:var(--tx)}
+.movers{background:var(--s1);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.mv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:9px 0;border-bottom:1px solid var(--s2);background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.mv:last-child{border-bottom:0}
+.mv .t{font-size:13px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv .p{font:500 14px var(--mono);text-align:right}
+.mv .s{font-size:11px;color:var(--mut);display:flex;gap:6px;align-items:center}
+.mv .d{font:11px var(--mono);text-align:right}
+@media (max-width:1180px){.hero{grid-template-columns:1fr}.movers{display:none}}
+@media (max-width:700px){.hmain{grid-template-columns:1fr}.hstats{grid-template-columns:repeat(2,minmax(0,1fr))}.hcard .hq{font-size:20px;line-height:26px}.hodds .big{font-size:40px;line-height:44px}}
+
+/* market */
+.crumbs{font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center}
+.crumbs button{background:none;border:0;padding:0;color:var(--mut)}
+.crumbs button:hover{color:var(--tx)}
+.mk{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+.mk-l,.mk-r{display:flex;flex-direction:column;gap:16px;min-width:0}
+.mk-r{position:sticky;top:80px}
+.mhead{display:flex;align-items:center;gap:16px}
+.mhead h1{font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.mhead .meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px;color:var(--mut)}
+.mhead .timer{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.mhead .timer b{font:500 24px/28px var(--mono)}
+.banner{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:8px;border:1px solid;font-size:13px}
+.banner .t{flex:1}
+.banner strong{font-weight:600}
+.bn-auc{border-color:rgba(71,85,105,.35);background:rgba(71,85,105,.07)}
+.bn-cur{border-color:rgba(230,0,0,.35);background:rgba(230,0,0,.07)}
+.bn-mut{border-color:var(--line2);background:var(--s1)}
+.bn-yes{border-color:rgba(11,143,80,.35);background:rgba(11,143,80,.07)}
+.bn-no{border-color:rgba(37,99,235,.35);background:rgba(37,99,235,.07)}
+.mrow{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px}
+.pad{padding:18px 20px}
+.oddsbig{display:flex;align-items:flex-end;justify-content:space-between}
+.oddsbig .y{font:500 44px/48px var(--mono);color:var(--yes)}
+.oddsbig .n{font:400 24px/30px var(--mono);color:var(--no)}
+.split{height:6px;display:flex;gap:2px;margin:12px 0}
+.curvebig{position:relative;padding-bottom:18px;margin-top:12px}
+.curvebig .ticks span{position:absolute;bottom:0;transform:translateX(-50%);font:10px var(--mono);color:var(--fnt)}
+.kv{display:flex;flex-direction:column;gap:2px;text-align:right}
+.kv b{font:400 13px var(--mono)} .kv span{font-size:11px;color:var(--mut)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mut)}
+.legend span{display:flex;align-items:center;gap:6px}
+.mrow2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.bk{padding:14px 0}
+.bk-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 16px 10px}
+.bk-h span{font-size:11px;color:var(--mut);text-align:right}
+.lvl{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:4px 16px;font:12px var(--mono);font-variant-numeric:tabular-nums}
+.lvl .d{position:absolute;right:0;top:0;bottom:0}
+.lvl span{position:relative}
+.lvl .you{color:var(--cur);font-family:var(--px);font-size:9px;margin-left:6px}
+.spread{display:flex;justify-content:space-between;margin:4px 0;padding:6px 16px;border-block:1px solid var(--line);font:11px var(--mono);color:var(--mut)}
+.trow{display:grid;grid-template-columns:64px 72px 44px 1fr 78px;column-gap:8px;align-items:center;padding:5px 16px;font:12px var(--mono);font-variant-numeric:tabular-nums}
+.trow.hd{font:600 10px var(--sans);letter-spacing:.06em;color:var(--fnt);padding-top:0}
+/* ticket */
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;height:46px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--mut);font-weight:600}
+.tabs button[aria-selected="true"]{border-bottom-color:var(--tx);color:var(--tx)}
+.tk-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+.sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sbtn{height:52px;border-radius:4px;border:1px solid;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.sbtn .mono{font-weight:500}
+.sbtn.y{color:var(--yes);background:rgba(11,143,80,.08);border-color:rgba(11,143,80,.3)}
+.sbtn.n{color:var(--no);background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3)}
+.sbtn.y[aria-pressed="true"]{background:var(--yes);color:#FFFFFF;border-color:var(--yes)}
+.sbtn.n[aria-pressed="true"]{background:var(--no);color:#FFFFFF;border-color:var(--no)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;color:var(--mut)}
+.inp{height:44px;padding:0 12px;background:var(--bg);border:1px solid var(--line2);border-radius:4px;font:16px var(--mono);outline:none;width:100%}
+.inp:focus{border-color:var(--info)}
+.amt{display:flex;align-items:center;height:48px;padding:0 14px;background:var(--bg);border:1px solid var(--line2);border-radius:4px}
+.amt:focus-within{border-color:var(--info)}
+.amt input{flex:1;min-width:0;background:transparent;border:0;outline:none;font:20px var(--mono)}
+.presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.presets button{height:30px;border-radius:4px;border:1px solid var(--line2);background:var(--s2);font:12px var(--mono)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.guard{display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--s0);border:1px solid var(--line);border-radius:4px}
+.guard.on{border-color:rgba(230,0,0,.35)}
+.guard .row{display:flex;align-items:center;gap:10px;font-size:13px}
+.guard input[type=checkbox]{width:16px;height:16px;accent-color:var(--cur);margin:0}
+.guard .rng{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2)}
+.guard .rng input{width:64px;height:32px;padding:0 8px;background:var(--bg);border:1px solid var(--line2);border-radius:4px;font:13px var(--mono);outline:none}
+.sum{margin:0;display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--line);font-size:13px}
+.sum div{display:flex;justify-content:space-between;gap:12px}
+.sum dt{color:var(--mut)} .sum dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.cta{height:52px;border-radius:4px;border:0;font-size:15px;font-weight:600;color:#FFFFFF;width:100%}
+.note{font-size:11px;line-height:16px;color:var(--fnt);text-align:center}
+.warn{font-size:12px;line-height:18px;padding:10px 12px;border-radius:4px;background:var(--cur-t);color:var(--cur)}
+.err{font-size:12px;color:var(--no)}
+.olist{display:flex;flex-direction:column}
+.orow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--s2);font-size:12px}
+.orow:last-child{border-bottom:0}
+.rules{padding:4px 4px 0;display:flex;flex-direction:column;gap:8px;font-size:12px;line-height:18px;color:var(--mut)}
+.mobbar{display:none}
+
+/* portfolio + how */
+.ptable{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--s0)}
+.prow{display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 1fr 1fr 150px;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--s2);font-size:13px}
+.prow:last-child{border-bottom:0}
+.prow.hd{padding:8px 16px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--fnt);border-bottom:1px solid var(--line)}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.how{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.how .panel{padding:20px;display:flex;flex-direction:column;gap:12px}
+.how p{color:var(--tx2);line-height:1.55;max-width:62ch}
+.flow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.flow .badge{height:26px}
+.flow .arr{color:var(--fnt)}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;font-weight:600;color:var(--fnt);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:7px 8px;border-bottom:1px solid var(--s2);vertical-align:top}
+.tbl td.mono{white-space:nowrap}
+
+/* overlays */
+#toasts{position:fixed;left:88px;bottom:24px;z-index:60;display:flex;flex-direction:column;gap:8px;max-width:420px}
+.toast{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--s2);border:1px solid var(--line2);border-left-width:3px;border-radius:6px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tin .18s ease-out}
+.toast .x{margin-left:auto;background:none;border:0;color:var(--mut);padding:0 2px}
+@keyframes tin{from{transform:translateY(6px);opacity:.3}to{transform:none;opacity:1}}
+#demoBtn{position:fixed;right:24px;bottom:24px;z-index:55;height:40px;padding:0 14px;border-radius:4px;border:1px solid var(--cur);background:var(--bg);color:var(--cur);font-family:var(--px);font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#demoBtn[aria-expanded="true"]{background:var(--cur);color:#FFFFFF}
+#demo{position:fixed;right:24px;bottom:76px;z-index:55;width:340px;max-height:calc(100vh - 110px);overflow:auto;background:var(--s1);border:1px solid rgba(230,0,0,.4);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:16px;display:flex;flex-direction:column;gap:14px}
+#demo .grp{display:flex;flex-direction:column;gap:8px}
+#demo .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#demo .btn{height:34px;font-size:12px;padding:0 8px;white-space:normal;line-height:1.2}
+#demo ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--tx2);line-height:1.45}
+#demo ol button{background:none;border:0;padding:0;color:var(--cur);text-decoration:underline;text-underline-offset:2px;font-size:12px}
+.seg{display:flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+.seg button{flex:1;height:30px;border:0;background:transparent;font:12px var(--mono);color:var(--mut)}
+.seg button[aria-pressed="true"]{background:var(--tx);color:#FFFFFF}
+body.explain [data-x]{outline:1px dashed rgba(230,0,0,.7);outline-offset:2px;cursor:help;position:relative}
+body.explain [data-x]:hover{outline:2px solid var(--cur);background-color:rgba(230,0,0,.05)}
+#xd{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:70;width:min(560px,calc(100vw - 32px));background:var(--s1);border:1px solid var(--cur);border-radius:8px;padding:18px 20px;box-shadow:0 16px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:8px}
+#xd h3{font-family:var(--px);font-weight:400;font-size:14px;color:var(--cur);letter-spacing:.03em}
+#xd p{color:var(--tx2);line-height:1.55}
+#xd .hint{font-size:11px;color:var(--fnt)}
+#xd .close{position:absolute;right:10px;top:10px;background:none;border:0;color:var(--mut);width:32px;height:32px}
+.xtip{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:65;background:var(--cur);color:#FFFFFF;font-size:12px;font-weight:600;padding:6px 12px;border-radius:4px}
+#modal{position:fixed;inset:0;z-index:80;background:rgba(15,17,20,.35);display:flex;align-items:center;justify-content:center;padding:16px}
+#modal .box{width:min(380px,100%);background:var(--s1);border:1px solid var(--line2);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.wopt{display:flex;align-items:center;gap:12px;height:52px;padding:0 14px;border-radius:6px;border:1px solid var(--line2);background:var(--s2);font-weight:600;text-align:left}
+.wopt:hover{border-color:#C9CCD2}
+.wopt i{width:24px;height:24px;display:block}
+
+@media (prefers-reduced-motion: reduce){.toast{animation:none}}
+
+@media (max-width:1180px){
+  .feed-wrap{grid-template-columns:1fr}
+  .side{position:static}
+  .frow{grid-template-columns:minmax(0,1fr) 150px 160px 110px 64px 112px}
+  .curvecell .blocks{grid-template-columns:repeat(20,4px)!important}
+  .mk{grid-template-columns:minmax(0,1fr) 330px}
+  .search{width:220px}
+}
+@media (max-width:900px){
+  .mk{grid-template-columns:1fr}
+  .mk-r{position:static}
+  .mrow{grid-template-columns:1fr}
+  .how{grid-template-columns:1fr}
+  .table .frow.hd{display:none}
+  .frow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"m st" "c c" "o o" "i cl";row-gap:10px;padding:14px 16px}
+  .frow>:nth-child(1){grid-area:m}.frow>:nth-child(2){grid-area:c}.frow>:nth-child(3){grid-area:o}.frow>:nth-child(4){grid-area:i}.frow>:nth-child(5){grid-area:cl;justify-content:flex-end}.frow>:nth-child(6){grid-area:st}
+  .curvecell .blocks{grid-template-columns:repeat(20,minmax(0,1fr))!important;flex:1}
+  .prow{grid-template-columns:minmax(0,1fr) auto}
+  .prow>.h-m{display:none}
+  .prow.hd{display:none}
+}
+@media (max-width:700px){
+  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;width:auto;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--line);background:var(--bg);z-index:40;padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
+  .rail .logo{display:none}
+  .top{padding:0 16px;gap:10px}
+  .search,.net,.clock{display:none}
+  .xbtn .lab{display:none}
+  .view{padding:16px 16px 180px}
+  .mhead{flex-wrap:wrap}
+  .mhead h1{font-size:22px;line-height:28px}
+  .mrow2{grid-template-columns:1fr}
+  .kpis{gap:16px}
+  #toasts{left:16px;right:16px;bottom:140px;max-width:none}
+  #demoBtn{right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  #demo{right:16px;left:16px;width:auto;bottom:calc(124px + env(safe-area-inset-bottom,0px))}
+  .mobbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;position:fixed;left:0;right:0;bottom:calc(57px + env(safe-area-inset-bottom,0px));padding:10px 16px;background:var(--s0);border-top:1px solid var(--line);z-index:30}
+  .mobbar button{height:48px}
+  body.has-mobbar #demoBtn{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+}
+</style>
+
+<div class="app">
+  <nav class="rail" aria-label="Primary">
+    <button class="logo" data-act="nav" data-v="feed" aria-label="Burbit home">
+      <svg width="36" height="36" viewBox="0 0 1080 1080" aria-hidden="true"><rect width="1080" height="1080" fill="#F70000"/><path fill="#FFFFFF" fill-rule="evenodd" d="M324 162H742V176H756V189H769V203H783V216H796V458H783V472H769V486H756V499H742V513H729V526H715V540H648V621H796V635H810V877H796V891H783V904H769V918H310V904H270V216H324ZM472 243H540V324H594V525H472ZM500 688H608V836H540V769H500V756H486V702H500Z"/></svg>
+    </button>
+    <button class="navb" data-act="nav" data-v="feed" aria-label="Markets" id="nav-feed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
+    <button class="navb" data-act="nav" data-v="port" aria-label="Portfolio" id="nav-port"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V4h8v3"/></svg></button>
+    <button class="navb" data-act="nav" data-v="how" aria-label="How Burbit works" id="nav-how"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></button>
+  </nav>
+  <div class="main">
+    <header class="top" id="top"></header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div class="mobbar" id="mobbar" hidden></div>
+<button id="demoBtn" data-act="demo" aria-expanded="false" aria-controls="demo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>DEMO</button>
+<aside id="demo" hidden aria-label="Demo controls"></aside>
+<div id="xd" hidden role="dialog" aria-live="polite"></div>
+<div id="modal" hidden></div>
+
+<script>
+(() => {
+'use strict';
+const U = 1; // one winning share pays $1 USDC
+const SOLUSD = 150; // demo SOL price, to value the launchpad-side forcing cost in USDC
+const BASE = 18 * 3600;
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const r2 = (v) => Math.round(v * 100) / 100;
+const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const clock = (s) => { s = Math.floor(s); return [Math.floor(s / 3600) % 24, Math.floor(s / 60) % 60, s % 60].map((v) => String(v).padStart(2, '0')).join(':'); };
+const hm = (s) => clock(s).slice(0, 5);
+const sol = (v, d = 3) => (Math.abs(v) < 0.0005 && d === 3 ? 0 : v).toFixed(d);
+const usd = (v) => { const a = Math.abs(v); return (v < -0.004 ? '−' : '') + '$' + (a >= 1000 ? Math.round(a).toLocaleString('en-US') : a.toFixed(2)); };
+const cents = (p) => Math.round(p * 100) + '¢';
+const sgn = (v) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toFixed(2);
+const FORCE = [[0, 19.52], [30, 16.28], [50, 13.12], [70, 8.62], [80, 5.70], [90, 2.46], [95, 0.95], [100, 0]];
+function forcing(p) { p = clamp(p, 0, 100); for (let i = 1; i < FORCE.length; i++) { const [a, x] = FORCE[i - 1], [b, y] = FORCE[i]; if (p <= b) return x + (y - x) * (p - a) / (b - a); } return 0; }
+function raised(p) { const s = clamp(p, 0, 100) / 100 * 793.1; return 30 * s / (1073 - s); }
+const feeOf = (n, p) => n * U * 0.07 * p * (1 - p);
+function hash(str) { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+/* ---------- state ---------- */
+const S = { t: 138, speed: 1, paused: false, view: 'feed', mid: null, filter: 'active', cat: 'all', q: '', explain: false, demo: false,
+  wallet: null, bal: 5, markets: [], pos: {}, orders: [], oid: 1, spawnAt: 200, lastTicketKey: '', xTipShown: false };
+const T = { act: 'buy', side: 'yes', tab: 'dollars', amount: '10', priceC: '28', shares: '100', exp: 'gtc', postOnly: false, review: false, guard: false, gmin: '75', gmax: '90', err: '' };
+
+function M(o) {
+  const m = Object.assign({ type: 'grad', win: 15, launchpad: 'pump.fun', volSol: 0, state: 'live', openPct: 70, mu: 0.03, vol: 0.3, oi: 0, trades: [], hist: [], outcome: null, capFix: null, halt: null, fairFix: 0.3, dev: '9fQ2…k1Lm' }, o);
+  m.mint = (m.launchpad === 'Pons' ? '0x' + (hash(m.tick) % 65536).toString(16) : m.tick.slice(0, 4)) + '…' + (m.launchpad === 'pump.fun' ? 'pump' : m.launchpad === 'Pons' ? '7c1e' : 'rlab');
+  if (!m.volSol) m.volSol = m.oi * 2.6 + rnd(45, 300);
+  return m;
+}
+function cap(m) { return m.capFix != null ? m.capFix : 0.5 * forcing(m.pct) * SOLUSD; }
+function capRoomPairs(m) { return Math.max(0, Math.floor((cap(m) - m.oi) / U + 1e-9)); }
+function isOpen(m) { return m.state === 'live' || m.state === 'auction'; }
+function mk(id) { return S.markets.find((m) => m.id === id); }
+
+function fair(m) {
+  if (m.type !== 'grad') return m.fairFix;
+  const x = clamp((m.pct - 60) / 40, 0, 1);
+  const tl = clamp((m.deadlineAt - S.t) / 600, 0.15, 1.6);
+  return clamp(Math.pow(x, 2.2) * (0.55 + 0.45 * tl) * 1.2, 0.02, 0.97);
+}
+function lvlSize(m, p) { const h = hash(m.tick + p.toFixed(2) + Math.floor(S.t / 6)); return 20 + (h % 38) * 10; }
+function book(m) {
+  const a0 = r2(clamp(m.mid + 0.015, 0.02, 0.99)), b0 = r2(clamp(m.mid - 0.015, 0.01, 0.98));
+  const asks = [], bids = [];
+  for (let i = 0; i < 5; i++) {
+    const ap = r2(a0 + i * 0.01), bp = r2(b0 - i * 0.01);
+    if (ap <= 0.99) asks.push({ p: ap, s: lvlSize(m, ap), you: 0 });
+    if (bp >= 0.01) bids.push({ p: bp, s: lvlSize(m, bp), you: 0 });
+  }
+  for (const o of S.orders) {
+    if (o.mid !== m.id || !(o.status === 'open' || o.status === 'partial' || o.status === 'queued')) continue;
+    const yp = o.side === 'yes' ? o.price : r2(1 - o.price);
+    const list = isBid(o) ? bids : asks;
+    const rem = o.shares - o.filled;
+    const l = list.find((x) => x.p === yp);
+    if (l) { l.s += rem; l.you += rem; } else list.push({ p: yp, s: rem, you: rem });
+  }
+  asks.sort((a, b) => a.p - b.p); bids.sort((a, b) => b.p - a.p);
+  return { asks, bids };
+}
+function bestAsk(m) { return r2(clamp(m.mid + 0.015, 0.02, 0.99)); }
+function bestBid(m) { return r2(clamp(m.mid - 0.015, 0.01, 0.98)); }
+function priceFor(m, side) { return side === 'yes' ? bestAsk(m) : r2(1 - bestBid(m)); }
+
+function seedHist(m, from, p0, p1, o0, o1) {
+  const n = Math.max(2, S.t - from);
+  for (let i = 0; i <= n; i++) {
+    const f = i / n, t = from + i;
+    const auc = m.auctionEnd != null && t < m.auctionEnd;
+    m.hist.push({ t, pct: p0 + (p1 - p0) * f + (i && i < n ? rnd(-0.3, 0.3) : 0), mid: auc ? null : r2(clamp(o0 + (o1 - o0) * f + (i && i < n ? rnd(-0.015, 0.015) : 0), 0.01, 0.99)), auc });
+  }
+}
+function seedTrades(m, n) {
+  const kinds = ['MINT', 'TRANSFER', 'MINT', 'MERGE', 'TRANSFER', 'MINT'];
+  for (let i = 0; i < n; i++) {
+    const yes = Math.random() < 0.55, p = r2(clamp(m.mid + rnd(-0.03, 0.02), 0.01, 0.99));
+    const k = kinds[i % kinds.length];
+    m.trades.push({ t: S.t - 4 - i * 9, side: k === 'MERGE' ? 'SELL YES' : (yes ? 'BUY YES' : 'BUY NO'), p: yes || k === 'MERGE' ? p : r2(1 - p), n: 10 + Math.floor(rnd(0, 18)) * 5, kind: k });
+  }
+  if (m.auctionEnd != null && m.auctionEnd <= S.t) m.trades.push({ t: m.auctionEnd, side: 'UNCROSS', p: m.clear || r2(m.mid * 0.6), n: 150, kind: 'AUCTION' });
+}
+
+function init() {
+  S.t = 138; S.markets = []; S.orders = []; S.pos = {}; S.bal = 500; S.oid = 1; S.spawnAt = 200;
+  const add = (o) => { const m = M(o); S.markets.push(m); return m; };
+  const g = add({ id: 'gorp', tick: 'GORP', name: 'Gorp the Frog', col: '#7FB77E', q: 'Graduates within 15m?', pct: 82.4, mid: 0.31, oi: 276, created: 0, auctionEnd: 60, closeAt: 600, deadlineAt: 900, mu: 0.075, vol: 0.32, clear: 0.18 });
+  seedHist(g, 0, 70, 82.4, 0.18, 0.31);
+  const g2 = add({ id: 'gorp30', follow: 'gorp', tick: 'GORP', name: 'Gorp the Frog', col: '#7FB77E', win: 30, pct: 82.4, mid: 0.42, oi: 135, created: 0, auctionEnd: 60, closeAt: 1500, deadlineAt: 1800, clear: 0.27 });
+  seedHist(g2, 0, 70, 82.4, 0.27, 0.42);
+  const sp = add({ id: 'spud', tick: 'SPUD', name: 'Spud', col: '#D9A45B', q: 'Graduates within 15m?', pct: 91, mid: 0.59, oi: 144, created: -212, auctionEnd: -152, closeAt: 388, deadlineAt: 688, mu: 0.035, vol: 0.3, clear: 0.34 });
+  seedHist(sp, S.t - 180, 86, 91, 0.45, 0.59);
+  const kr = add({ launchpad: 'Raydium LaunchLab', id: 'krill', tick: 'KRILL', name: 'Krill Inc', col: '#E07A6B', q: 'Graduates within 15m?', pct: 70.3, mid: 0.06, oi: 0, created: 120, auctionEnd: 180, closeAt: 720, deadlineAt: 1020, state: 'auction', mu: 0.05, vol: 0.3 });
+  seedHist(kr, 120, 70, 70.3, 0.06, 0.06);
+  const mo = add({ launchpad: 'Raydium LaunchLab', id: 'moth', tick: 'MOTH', name: 'Moth Lamp', col: '#9DB4D9', type: 'rug', q: 'Will the dev sell half their bag before 18:30?', pct: 76, mid: 0.44, fairFix: 0.44, oi: 46, capFix: 75, created: -300, auctionEnd: -240, closeAt: 1500, deadlineAt: 1800, mu: 0.005, vol: 0.2, clear: 0.40 });
+  seedHist(mo, S.t - 180, 75, 76, 0.40, 0.44);
+  const br = add({ id: 'brrr', tick: 'BRRR', name: 'Brrr', col: '#6FC3C9', q: 'Graduates within 15m?', pct: 88, mid: 0.39, oi: 230, created: -67, auctionEnd: -7, closeAt: 533, deadlineAt: 833, mu: 0.01, vol: 0.25, clear: 0.22 });
+  br.oi = r2(cap(br) + 0.02);
+  seedHist(br, S.t - 180, 84, 88, 0.30, 0.39);
+  const pl = add({ launchpad: 'Pons', id: 'plank', tick: 'PLANK', name: 'Plank', col: '#C9B26F', q: 'Graduates within 15m?', pct: 73, mid: 0.09, oi: 63, created: -165, auctionEnd: -105, closeAt: 435, deadlineAt: 735, mu: -0.008, vol: 0.22, clear: 0.07 });
+  seedHist(pl, S.t - 180, 72, 73, 0.07, 0.09);
+  const lu = add({ id: 'lumen', tick: 'LUMEN', name: 'Lumen', col: '#E8D48B', type: 'bonded', q: 'Will the dev pull their bonded bag before 19:00?', pct: 64, mid: 0.12, fairFix: 0.12, oi: 165, created: -900, auctionEnd: -840, closeAt: 3300, deadlineAt: 3600, mu: 0.004, vol: 0.12, bond: 1200, bagTokens: 62e6, clear: 0.15 });
+  lu.capFix = lu.bond;
+  seedHist(lu, S.t - 180, 63, 64, 0.14, 0.12);
+  add({ launchpad: 'Pons', id: 'zorb', tick: 'ZORB', name: 'Zorb', col: '#8FD19E', q: 'Graduated within 15m', pct: 100, mid: 0.99, oi: 210, state: 'resolved', outcome: 'yes', closeAt: 20, deadlineAt: 320, gradIn: 252, resT: 60, auctionEnd: -600 });
+  add({ id: 'hollow', win: 10, tick: 'HOLLOW', name: 'Hollow', col: '#A0A4AD', q: 'Graduated within 10m', pct: 79.2, mid: 0.01, oi: 120, state: 'resolved', outcome: 'no', closeAt: 10, deadlineAt: 110, resT: 110, auctionEnd: -600 });
+  add({ launchpad: 'Raydium LaunchLab', id: 'vanta', tick: 'VANTA', name: 'Vanta', col: '#B0A0C8', q: 'Graduates within 15m?', pct: 81, mid: 0.3, oi: 90, state: 'void', outcome: 'void', closeAt: 400, deadlineAt: 700, resT: 90, auctionEnd: -300 });
+  for (const m of S.markets) if (m.state === 'live') seedTrades(m, 10);
+  kr.trades = [];
+  S.pos = {
+    gorp: { yes: 120, no: 0, cy: 120 * 0.22 * U, cn: 0 },
+    spud: { yes: 0, no: 40, cy: 0, cn: 40 * 0.48 * U },
+    plank: { yes: 20, no: 20, cy: 20 * 0.08 * U, cn: 20 * 0.92 * U },
+    zorb: { yes: 80, no: 0, cy: 80 * 0.35 * U, cn: 0 },
+    hollow: { yes: 50, no: 0, cy: 50 * 0.2 * U, cn: 0 },
+    vanta: { yes: 30, no: 0, cy: 30 * 0.3 * U, cn: 0 }
+  };
+  addOrder({ mid: 'gorp', side: 'yes', price: 0.26, shares: 100, guard: null, status: 'open' });
+  addOrder({ mid: 'krill', side: 'yes', price: 0.07, shares: 150, guard: null, status: 'queued' });
+  S.bal = 500 - 0.26 * 100 * U - 0.07 * 150 * U;
+}
+const isBid = (o) => (o.act !== 'sell') === (o.side === 'yes');
+function addOrder(o) {
+  const ord = Object.assign({ id: S.oid++, act: 'buy', filled: 0, created: S.t, note: '', basis: 0 }, o);
+  ord.escrow = ord.act === 'sell' ? 0 : ord.price * ord.shares * U;
+  S.orders.unshift(ord);
+  return ord;
+}
+function P(id) { return S.pos[id] || (S.pos[id] = { yes: 0, no: 0, cy: 0, cn: 0 }); }
+
+/* ---------- toasts ---------- */
+function toast(msg, kind = 'info', act) {
+  const col = { yes: 'var(--yes)', no: 'var(--no)', cur: 'var(--cur)', info: 'var(--info)', mut: 'var(--mut)' }[kind];
+  const el = document.createElement('div');
+  el.className = 'toast'; el.style.borderLeftColor = col;
+  el.innerHTML = '<div>' + msg + (act ? ' <button class="btn ghost" style="height:28px;margin-top:8px;display:flex" data-act="' + act.act + '" data-id="' + (act.id || '') + '" data-v="' + (act.v || '') + '">' + act.label + '</button>' : '') + '</div><button class="x" aria-label="Dismiss">✕</button>';
+  el.querySelector('.x').onclick = () => el.remove();
+  $('#toasts').prepend(el);
+  while ($('#toasts').children.length > 4) $('#toasts').lastChild.remove();
+  setTimeout(() => el.remove(), 7000);
+}
+
+/* ---------- market events ---------- */
+function release(o) {
+  const rem = o.shares - o.filled;
+  if (o.act === 'sell') { const p = P(o.mid); if (o.side === 'yes') { p.yes += rem; p.cy += rem * o.basis; } else { p.no += rem; p.cn += rem * o.basis; } return rem + ' ' + o.side.toUpperCase() + ' back in your position'; }
+  const v = rem * o.price * U; S.bal += v; return usd(v) + ' refunded';
+}
+function refundOrders(m, reason) {
+  const back = [];
+  for (const o of S.orders) {
+    if (o.mid !== m.id || !['open', 'partial', 'queued'].includes(o.status)) continue;
+    back.push(release(o)); o.status = 'refunded'; o.note = reason;
+  }
+  if (back.length && S.wallet) toast(back.length + ' resting order' + (back.length > 1 ? 's' : '') + ' on $' + m.tick + ' cancelled by the halt: <span class="mono">' + back.join(', ') + '</span>.', 'mut');
+}
+function uncross(m) {
+  m.state = 'live';
+  const p = r2(m.mid); m.clear = p;
+  m.trades.unshift({ t: S.t, side: 'UNCROSS', p, n: 90, kind: 'AUCTION' }, { t: S.t, side: 'UNCROSS', p, n: 120, kind: 'AUCTION' });
+  m.oi = Math.min(cap(m), m.oi + (2.1 * p + 0.5) * SOLUSD);
+  for (const o of S.orders) {
+    if (o.mid !== m.id || o.status !== 'queued') continue;
+    if (o.act === 'sell') { o.status = 'open'; continue; }
+    if (o.guard && (m.pct < o.guard[0] || m.pct > o.guard[1])) { voidByGuard(o, m); continue; }
+    const crosses = o.side === 'yes' ? o.price >= p : o.price >= r2(1 - p);
+    if (!crosses) { o.status = 'open'; if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + p.toFixed(2) + '</span>. Your order didn\'t cross, so it now rests on the book.', 'info'); continue; }
+    const px = o.side === 'yes' ? p : r2(1 - p);
+    const n = Math.min(o.shares, capRoomPairs(m) || o.shares);
+    const cost = n * px * U, f = o.side === 'yes' ? feeOf(n, p) : 0;
+    S.bal += o.escrow - cost - f;
+    const ps = P(m.id); if (o.side === 'yes') { ps.yes += n; ps.cy += cost + f; } else { ps.no += n; ps.cn += cost + f; }
+    o.filled = n; o.fillPx = px; o.status = n < o.shares ? 'partial' : 'filled';
+    if (n < o.shares) { S.bal += (o.shares - n) * o.price * U; o.status = 'filled'; o.note = 'rest refunded: market full'; }
+    m.oi = Math.min(cap(m) + 0.001, m.oi + n * U);
+    m.trades.unshift({ t: S.t, side: o.side === 'yes' ? 'BUY YES' : 'BUY NO', p: px, n, kind: 'AUCTION', you: true });
+    if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + p.toFixed(2) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + px.toFixed(2) + '</span>, below your limit of ' + o.price.toFixed(2) + '. The difference was refunded.', 'info', { act: 'open', id: m.id, label: 'View market' });
+  }
+}
+function halt(m, why) {
+  m.state = 'halted'; m.halt = why; m.haltT = S.t;
+  refundOrders(m, why === 'grad' ? 'halted: graduated' : 'halted: trading closed');
+}
+function graduate(m) {
+  m.pct = 100; m.gradIn = S.t - m.created; halt(m, 'grad'); m.resolveAt = S.t + 3;
+  toast('$' + m.tick + ' graduated on ' + m.launchpad + '. Market halted; settling YES.', 'cur', { act: 'open', id: m.id, label: 'View market' });
+}
+function resolve(m, out) {
+  m.state = 'resolved'; m.outcome = out; m.resT = S.t;
+  const p = S.pos[m.id];
+  if (p && S.wallet) {
+    const pay = payout(m, p);
+    if (pay > 0) toast('$' + m.tick + ' settled <b>' + out.toUpperCase() + '</b>. You have <span class="mono">' + usd(pay) + '</span> to claim.', out === 'yes' ? 'yes' : 'no', { act: 'claim', id: m.id, label: 'Claim ' + usd(pay) + '' });
+    else if (p.yes + p.no > 0) toast('$' + m.tick + ' settled <b>' + out.toUpperCase() + '</b>. Your shares lost.', 'mut');
+  }
+}
+function voidM(m) {
+  m.state = 'void'; m.outcome = 'void'; m.resT = S.t;
+  refundOrders(m, 'market voided');
+  toast('$' + m.tick + ': the launchpad account could not be read, so the market is VOID. Every share redeems for 50¢; each pair gets its full $1 back.', 'mut', { act: 'open', id: m.id, label: 'View market' });
+}
+function payout(m, p) {
+  if (!p || p.claimed) return 0;
+  if (m.outcome === 'yes') return p.yes * U;
+  if (m.outcome === 'no') return p.no * U;
+  if (m.outcome === 'void') return (p.yes + p.no) * U / 2;
+  return 0;
+}
+function voidByGuard(o, m) {
+  const back = release(o);
+  o.status = 'voided'; o.note = 'curve ' + m.pct.toFixed(1) + '% left ' + o.guard[0] + '–' + o.guard[1] + '%';
+  if (S.wallet) toast('Order voided: $' + m.tick + '\'s curve moved to <span class="mono">' + m.pct.toFixed(1) + '%</span>, outside your ' + o.guard[0] + '–' + o.guard[1] + '% guard. Never filled: <span class="mono">' + back + '</span>.', 'cur');
+}
+
+/* ---------- simulation ---------- */
+function step(m) {
+  const moving = m.state === 'auction' || m.state === 'live' || (m.state === 'halted' && m.halt === 'close');
+  if (m.follow) { const L = mk(m.follow); if (L) m.pct = L.pct; }
+  else if (moving) {
+    m.pct = clamp(m.pct + m.mu + m.vol * rnd(-1, 1), 40, m.type === 'grad' ? 100 : 99.5);
+  }
+  if (m.state === 'auction') {
+    m.mid = r2(clamp(m.mid + (fair(m) - m.mid) * 0.1, 0.02, 0.98));
+    if (S.t >= m.auctionEnd) uncross(m);
+  } else if (m.state === 'live') {
+    if (m.type === 'grad' && m.pct >= 100) { graduate(m); }
+    else if (S.t >= m.closeAt) { halt(m, 'close'); if (S.wallet) toast('Trading closed on $' + m.tick + '. It still settles YES if the token graduates before ' + hm(BASE + m.deadlineAt) + '.', 'mut'); }
+    else {
+      m.mid = r2(clamp(m.mid + (fair(m) - m.mid) * 0.12 + rnd(-0.012, 0.012), 0.02, 0.98));
+      if (Math.random() < 0.45) randomTrade(m);
+    }
+  } else if (m.state === 'halted') {
+    if (m.halt === 'grad' && S.t >= m.resolveAt) resolve(m, 'yes');
+    else if (m.halt === 'close') {
+      if (m.type === 'grad' && m.pct >= 100) { m.gradIn = S.t - m.created; m.halt = 'grad'; m.resolveAt = S.t + 3; toast('$' + m.tick + ' graduated after trading closed but before the deadline. Settling YES.', 'cur'); }
+      else if (S.t >= m.deadlineAt) resolve(m, m.type === 'grad' ? 'no' : (m.rugHit ? 'yes' : 'no'));
+    }
+  }
+  if (moving || m.state === 'halted') {
+    m.hist.push({ t: S.t, pct: m.pct, mid: m.state === 'auction' ? null : m.mid, auc: m.state === 'auction' });
+    if (m.hist.length > 1200) m.hist.shift();
+  }
+}
+function randomTrade(m) {
+  const r = Math.random();
+  const n = 10 + Math.floor(rnd(0, 18)) * 5;
+  let kind, side, p;
+  if (r < 0.15 && m.oi > n * U) { kind = 'MERGE'; side = 'SELL YES'; p = bestBid(m); m.oi -= n * U; }
+  else if (r < 0.6 && capRoomPairs(m) >= n) { kind = 'MINT'; const y = Math.random() < 0.5; side = y ? 'BUY YES' : 'BUY NO'; p = y ? bestAsk(m) : r2(1 - bestBid(m)); m.oi += n * U; }
+  else { kind = 'TRANSFER'; const y = Math.random() < 0.5; side = y ? 'BUY YES' : 'BUY NO'; p = y ? bestAsk(m) : r2(1 - bestBid(m)); }
+  if (m.type === 'bonded' && side === 'BUY NO') { side = 'BUY YES'; p = bestAsk(m); }
+  m.trades.unshift({ t: S.t, side, p, n, kind });
+  m.volSol += n * p * U;
+  if (m.trades.length > 40) m.trades.pop();
+}
+function processOrders() {
+  for (const o of S.orders) {
+    if (!['open', 'partial'].includes(o.status)) continue;
+    const m = mk(o.mid); if (!m || m.state !== 'live') continue;
+    if (o.expireAt && S.t >= o.expireAt) { const back = release(o); o.status = 'expired'; if (S.wallet) toast('Your order on $' + m.tick + ' expired unfilled: <span class="mono">' + back + '</span>.', 'mut'); continue; }
+    if (o.guard && (m.pct < o.guard[0] || m.pct > o.guard[1])) { voidByGuard(o, m); continue; }
+    const yp = o.side === 'yes' ? o.price : r2(1 - o.price), bid = isBid(o);
+    const near = bid ? (m.mid - yp <= 0.025) : (yp - m.mid <= 0.025);
+    const through = bid ? bestAsk(m) <= yp : bestBid(m) >= yp;
+    if (!(through || (near && Math.random() < 0.14))) continue;
+    let n = Math.min(o.shares - o.filled, 15 + Math.floor(rnd(0, 12)) * 5), kind;
+    const ps = P(m.id);
+    if (o.act === 'sell') {
+      kind = Math.random() < 0.5 && m.oi >= n * U ? 'MERGE' : 'TRANSFER';
+      if (kind === 'MERGE') m.oi -= n * U;
+      S.bal += n * o.price * U;
+    } else {
+      const mint = capRoomPairs(m) > 0;
+      if (mint) n = Math.min(n, capRoomPairs(m));
+      if (n <= 0) continue;
+      kind = mint ? 'MINT' : 'TRANSFER';
+      if (mint) m.oi += n * U;
+      if (o.side === 'yes') { ps.yes += n; ps.cy += n * o.price * U; } else { ps.no += n; ps.cn += n * o.price * U; }
+    }
+    const rebate = 0.2 * feeOf(n, yp);
+    S.bal += rebate;
+    o.filled += n; o.rebate = (o.rebate || 0) + rebate;
+    o.status = o.filled >= o.shares ? 'filled' : 'partial';
+    m.volSol += n * o.price * U;
+    m.trades.unshift({ t: S.t, side: (o.act === 'sell' ? 'SELL ' : 'BUY ') + o.side.toUpperCase(), p: o.price, n, kind, you: true });
+    if (S.wallet) toast('Your ' + o.act + ' order on $' + m.tick + ' filled <span class="mono">' + o.filled + '/' + o.shares + ' ' + o.side.toUpperCase() + '</span> at ' + o.price.toFixed(2) + (o.act === 'sell' ? ' (' + (kind === 'MERGE' ? 'merged with a ' + (o.side === 'yes' ? 'NO' : 'YES') + ' seller' : 'bought by another trader') + ')' : '') + '. Maker rebate <span class="mono">+' + usd(rebate) + '</span>.', o.side === 'yes' ? 'yes' : 'no');
+  }
+}
+const POOL = [['FLUX', 'Flux', '#8FC1D9'], ['OKRA', 'Okra', '#9FCB7C'], ['DINGO', 'Dingo', '#D99B6C'], ['PEBL', 'Pebble', '#B8B8C8'], ['YAWN', 'Yawn', '#C9A8E0'], ['SNAX', 'Snax', '#E0B870'], ['GLOOP', 'Gloop', '#7FD1B9'], ['BIRB', 'Birb', '#E09C9C'], ['TUSK', 'Tusk', '#C8C0A0'], ['MEEP', 'Meep', '#A0C0E8']];
+function spawn() {
+  const used = new Set(S.markets.map((m) => m.tick));
+  const pick = POOL.find((x) => !used.has(x[0]));
+  if (!pick) return;
+  const win = Math.random() < 0.5 ? 10 : 15;
+  const m = M({ launchpad: Object.keys(LP)[Math.floor(Math.random() * 3)], id: pick[0].toLowerCase(), tick: pick[0], name: pick[1], col: pick[2], q: 'Graduates within ' + win + 'm?', win, pct: 70, mid: 0.05, oi: 0, created: S.t, auctionEnd: S.t + 60, closeAt: S.t + win * 60 - 300, deadlineAt: S.t + win * 60, state: 'auction', mu: rnd(-0.01, 0.07), vol: rnd(0.2, 0.35) });
+  m.mid = r2(fair(m));
+  S.markets.splice(S.markets.findIndex((x) => !isOpen(x) && x.state !== 'halted') >= 0 ? S.markets.findIndex((x) => !isOpen(x) && x.state !== 'halted') : S.markets.length, 0, m);
+  toast('New market: <b>' + question(m) + '</b> ($' + m.tick + ' on ' + m.launchpad + ' is close to graduating). Opening auction running.', 'info', { act: 'open', id: m.id, label: 'Open auction' });
+  const settled = S.markets.filter((x) => x.state === 'resolved' || x.state === 'void');
+  if (settled.length > 5) { const old = settled.sort((a, b) => a.resT - b.resT)[0]; if (!S.pos[old.id] || payout(old, S.pos[old.id]) === 0) S.markets.splice(S.markets.indexOf(old), 1); }
+}
+function tick() {
+  S.t += 1;
+  for (const m of S.markets) step(m);
+  processOrders();
+  if (S.t >= S.spawnAt) { spawn(); S.spawnAt = S.t + 90; }
+  refresh();
+}
+let timer = null;
+function setSpeed(v) {
+  S.speed = v; S.paused = v === 0;
+  clearInterval(timer);
+  if (v > 0) timer = setInterval(tick, 1000 / v);
+}
+
+/* ---------- UI helpers ---------- */
+function shade(hex) { const n = parseInt(hex.slice(1), 16); const f = (v) => Math.round(v * 0.62).toString(16).padStart(2, '0'); return '#' + f(n >> 16) + f((n >> 8) & 255) + f(n & 255); }
+function ident(m, size) {
+  const h = hash(m.tick), pad = Math.round(size / 9);
+  let s = '<div class="ident" aria-hidden="true" style="width:' + size + 'px;height:' + size + 'px;padding:' + pad + 'px">';
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) {
+    const sx = x < 3 ? x : 4 - x;
+    const on = ((h >>> (y * 3 + sx)) & 1) === 1 || (y === 2 && sx === 2);
+    s += '<span style="background:' + (on ? shade(m.col) : 'transparent') + '"></span>';
+  }
+  return s + '</div>';
+}
+function blocks(pct, openPct, n, w, h, dim) {
+  const step = 100 / n;
+  let s = '<div class="blocks" aria-hidden="true" style="grid-template-columns:repeat(' + n + ',' + (w ? w + 'px' : 'minmax(0,1fr)') + ')">';
+  for (let i = 0; i < n; i++) {
+    const hi = (i + 1) * step;
+    const c = hi <= pct + 1e-6 ? (dim ? '#EBD2D2' : (i * step < openPct ? 'var(--curd)' : 'var(--cur)')) : 'var(--empty)';
+    s += '<span style="height:' + h + 'px;background:' + c + '"></span>';
+  }
+  return s + '</div>';
+}
+function badge(m) {
+  if (m.state === 'auction') return '<span class="badge b-auc"><i></i>AUCTION ' + mmss(m.auctionEnd - S.t).slice(1) + '</span>';
+  if (m.state === 'live') return m.oi >= cap(m) - 1e-6 ? '<span class="badge b-cur"><i></i>FULL</span>' : '<span class="badge b-live"><i></i>LIVE</span>';
+  if (m.state === 'halted') return m.halt === 'grad' ? '<span class="badge b-cur"><i></i>GRADUATED</span>' : '<span class="badge b-mut"><i></i>HALTED</span>';
+  if (m.state === 'void') return '<span class="badge b-mut"><i></i>VOID</span>';
+  if (m.outcome === 'yes') return '<span class="badge ' + (m.type === 'grad' ? 'b-cur' : 'b-live') + '"><i></i>' + (m.type === 'grad' ? 'GRADUATED' : 'SETTLED YES') + '</span>';
+  return '<span class="badge b-mut"><i></i>SETTLED NO</span>';
+}
+function typeTag(m) {
+  if (m.type === 'rug') return '<span class="tag" style="color:var(--no);border-color:rgba(37,99,235,.35)">RUG</span>';
+  if (m.type === 'bonded') return '<span class="tag" style="color:var(--cur);border-color:rgba(230,0,0,.4)">BONDED</span>';
+  return '';
+}
+function oddsButtons(m) {
+  if (m.state === 'resolved' || m.state === 'void') {
+    if (m.state === 'void') return '<div class="odds2"><span class="ob vd"><span>YES</span><span class="mono">0.50</span></span><span class="ob vd"><span>NO</span><span class="mono">0.50</span></span></div>';
+    const y = m.outcome === 'yes';
+    return '<div class="odds2"><span class="ob y ' + (y ? 'win' : 'lose') + '"><span>YES</span><span class="mono">' + (y ? '1.00' : '0') + '</span></span><span class="ob n ' + (!y ? 'win' : 'lose') + '"><span>NO</span><span class="mono">' + (!y ? '1.00' : '0') + '</span></span></div>';
+  }
+  const ind = m.state === 'auction' ? ' ind' : '', tl = m.state === 'auction' ? '~' : '';
+  const live = m.state === 'live';
+  const ypx = (live ? bestAsk(m) : r2(m.mid)).toFixed(2), npx = (live ? r2(1 - bestBid(m)) : r2(1 - m.mid)).toFixed(2);
+  const dis = m.state === 'halted' ? ' disabled' : '';
+  return '<div class="odds2" data-x="odds"><button class="ob y' + ind + '" data-act="open" data-id="' + m.id + '" data-v="yes"' + dis + '><span>Yes</span><span class="mono">' + tl + cents(ypx) + '</span></button><button class="ob n' + ind + '" data-act="open" data-id="' + m.id + '" data-v="no"' + dis + (m.type === 'bonded' ? ' disabled title="Only the creator holds NO"' : '') + '><span>No</span><span class="mono">' + tl + cents(npx) + '</span></button></div>';
+}
+function closesText(m) {
+  if (m.state === 'auction' || m.state === 'live') { const s = m.closeAt - S.t; return '<span class="mono" style="color:' + (s < 60 ? 'var(--no)' : 'var(--tx)') + '">' + mmss(s) + '</span>'; }
+  if (m.state === 'halted' && m.halt === 'close') return '<span class="mono mut">settles ' + mmss(m.deadlineAt - S.t) + '</span>';
+  if (m.state === 'halted') return '<span class="mono c-cur">settling</span>';
+  return '<span class="mono fnt">closed</span>';
+}
+
+/* ---------- top bar ---------- */
+function renderTop() {
+  const w = S.wallet;
+  $('#top').innerHTML =
+    '<span class="wordmark">BURBIT</span>' +
+    '<label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="sr">Search markets</span><input id="q" type="search" placeholder="Search ticker or name" value="' + S.q + '"></label>' +
+    '<div class="grow"></div>' +
+    '<div class="clock" title="Simulated time"><b>' + clock(BASE + S.t) + '</b><span>' + (S.paused ? 'paused' : 'simulated · ' + S.speed + '×') + '</span></div>' +
+    '<span class="net">DEVNET</span>' +
+    '<button class="xbtn" data-act="explain" aria-pressed="' + S.explain + '" title="Click any outlined part to see what it is"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/></svg><span class="lab">EXPLAIN</span></button>' +
+    (w ? '<span class="mono" style="font-size:13px" data-x="wallet">' + usd(S.bal) + ' <span class="mut">USDC</span></span><button class="wal" data-act="wallet"><i></i>' + w + '</button>'
+       : '<button class="wal off" data-act="wallet" data-x="wallet">Connect wallet</button>');
+}
+function updateTopDynamic() {
+  const c = $('#top .clock'); if (c) c.innerHTML = '<b>' + clock(BASE + S.t) + '</b><span>' + (S.paused ? 'paused' : 'simulated · ' + S.speed + '×') + '</span>';
+  const b = $('#top [data-x="wallet"].mono'); if (b) b.innerHTML = usd(S.bal) + ' <span class="mut">USDC</span>';
+}
+
+/* ---------- feed ---------- */
+const LP = { 'pump.fun': ['#86C9A0', 'P'], 'Raydium LaunchLab': ['#8FB0E0', 'R'], 'Pons': ['#E3A55B', 'Po'] };
+function srcMark(m) { const l = LP[m.launchpad] || ['#6B7079', '?']; return '<span class="src" data-x="source" title="Launched on ' + m.launchpad + '"><i style="background:' + l[0] + '">' + l[1] + '</i>' + m.launchpad + '</span>'; }
+function srcBadge(m) { const l = LP[m.launchpad] || ['#6B7079', '?']; return '<span class="venue" data-x="source" title="Event source: ' + m.launchpad + '"><i style="background:' + l[0] + ';color:#FFFFFF">' + l[1] + '</i>' + m.launchpad + '</span>'; }
+function question(m) { return m.type === 'grad' ? 'Will $' + m.tick + ' graduate within ' + m.win + ' minutes?' : m.q; }
+function shortQ(m) { return m.type === 'grad' ? 'Graduates within ' + m.win + 'm' : m.type === 'bonded' ? 'Dev pulls bonded bag' : 'Dev sells half their bag'; }
+const STATUS = [['active', 'Live'], ['new', 'New · in auction'], ['ending', 'Ending soon'], ['settled', 'Settled']];
+const active = (m) => isOpen(m) || m.state === 'halted';
+const FT = {
+  active, new: (m) => m.state === 'auction', ending: (m) => isOpen(m) && m.closeAt - S.t < 600, settled: (m) => !active(m)
+};
+function passes(m, ignore) {
+  const q = S.q.trim().toLowerCase();
+  return (ignore === 'cat' || S.cat === 'all' || m.launchpad === S.cat) &&
+    (ignore === 'status' || FT[S.filter](m)) &&
+    (!q || (m.tick + ' ' + m.name + ' ' + question(m) + ' ' + m.launchpad).toLowerCase().includes(q));
+}
+const volScore = (m) => m.volSol;
+function events(ms) {
+  const map = new Map();
+  for (const m of ms) { const k = m.tick; if (!map.has(k)) map.set(k, []); map.get(k).push(m); }
+  const ev = [...map.values()];
+  if (S.filter === 'settled') return ev.sort((a, b) => (b[0].resT || 0) - (a[0].resT || 0));
+  if (S.filter === 'ending') return ev.sort((a, b) => a[0].closeAt - b[0].closeAt);
+  return ev.sort((a, b) => (a[0].state === 'halted') - (b[0].state === 'halted') || b.reduce((s, m) => s + volScore(m), 0) - a.reduce((s, m) => s + volScore(m), 0));
+}
+function spark(m, w, h) {
+  const pts = m.hist.filter((x) => x.mid != null).slice(-150);
+  if (pts.length < 2) return '<svg width="' + w + '" height="' + h + '" aria-hidden="true"></svg>';
+  const lo = Math.min(...pts.map((p) => p.mid)), hi = Math.max(...pts.map((p) => p.mid)), rg = Math.max(0.04, hi - lo);
+  const d = pts.map((p, i) => (i / (pts.length - 1) * w).toFixed(1) + ',' + (h - 2 - (p.mid - lo) / rg * (h - 4)).toFixed(1)).join(' ');
+  const up = pts[pts.length - 1].mid >= pts[0].mid;
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><polyline points="' + d + '" fill="none" stroke="' + (up ? '#0B8F50' : '#2563EB') + '" stroke-width="1.5"/></svg>';
+}
+function chanceHTML(m) {
+  const settled = m.state === 'resolved' || m.state === 'void', yp = Math.round(m.mid * 100);
+  if (settled) return m.state === 'void' ? '<b class="mut">VOID</b><span>50¢ per share back</span>' : '<b class="' + (m.outcome === 'yes' ? 'c-yes' : 'c-no') + '">' + m.outcome.toUpperCase() + '</b><span>settled at ' + hm(BASE + (m.resT || S.t)) + '</span>';
+  return '<b style="color:' + (yp >= 50 ? 'var(--yes)' : 'var(--tx)') + '">' + (m.state === 'auction' ? '~' : '') + yp + '%</b><span>' + (m.state === 'auction' ? 'indicative · auction' : 'chance') + '</span>';
+}
+function card(m) {
+  const open = isOpen(m), settled = m.state === 'resolved' || m.state === 'void';
+  return '<article class="card' + (m.state === 'auction' ? ' auc' : '') + (settled ? ' done' : '') + '">' +
+    '<div class="ctop">' + ident(m, 32) + '<div style="display:flex;flex-direction:column;min-width:0;flex:1"><span class="meta"><span class="tk">$' + m.tick + '</span>' + typeTag(m) + '</span><span class="mut" style="font-size:11px">' + m.name + '</span></div>' + srcBadge(m) + '</div>' +
+    '<button class="cq" data-act="open" data-id="' + m.id + '">' + question(m) + '</button>' +
+    '<div class="chance" data-x="odds"><div style="display:flex;flex-direction:column">' + chanceHTML(m) + '</div>' + (settled ? '' : spark(m, 96, 30)) + '</div>' +
+    oddsButtons(m) +
+    '<div class="cfoot"><span class="mono">' + usd(m.volSol) + ' vol</span><span data-x="countdown">' + closesText(m) + '</span><span data-x="state">' + badge(m) + '</span></div></article>';
+}
+function eventCard(ms) {
+  if (ms.length === 1) return card(ms[0]);
+  const m = ms[0], open = isOpen(m);
+  const vol = ms.reduce((s, x) => s + x.volSol, 0);
+  return '<article class="card" data-x="event">' +
+    '<div class="ctop">' + ident(m, 32) + '<div style="display:flex;flex-direction:column;min-width:0;flex:1"><span class="meta"><span class="tk">$' + m.tick + '</span></span><span class="mut" style="font-size:11px">' + m.name + '</span></div>' + srcBadge(m) + '</div>' +
+    '<div class="evq">$' + m.tick + ' · ' + ms.length + ' markets</div>' +
+    '<div class="evrows">' + ms.map((x) => {
+      const live = x.state === 'live', settled = x.state === 'resolved' || x.state === 'void';
+      const right = settled ? '<span class="mono ' + (x.outcome === 'yes' ? 'c-yes' : x.outcome === 'no' ? 'c-no' : 'mut') + '">' + (x.outcome || '').toUpperCase() + '</span>'
+        : '<button class="mini y" data-act="open" data-id="' + x.id + '" data-v="yes"' + (x.state === 'halted' ? ' disabled' : '') + '>Yes</button><button class="mini n" data-act="open" data-id="' + x.id + '" data-v="no"' + (x.state === 'halted' ? ' disabled' : '') + '>No</button>';
+      return '<div class="evrow"><button class="evname" data-act="open" data-id="' + x.id + '">' + shortQ(x) + '</button><span class="mono evpct">' + (settled ? '' : (x.state === 'auction' ? '~' : '') + Math.round(x.mid * 100) + '%') + '</span>' + right + '</div>';
+    }).join('') + '</div>' +
+    '<div class="cfoot"><span class="mono">' + usd(vol) + ' vol</span><span>' + closesText(m) + '</span><span>' + badge(m) + '</span></div></article>';
+}
+function siblings(m) {
+  const sib = S.markets.filter((x) => x.tick === m.tick);
+  if (sib.length < 2) return '';
+  return '<section class="panel evlist" data-x="event"><div class="evlist-h"><h2 class="h2">MARKETS ON $' + m.tick + '</h2><span class="mut" style="font-size:12px">' + sib.length + ' markets · pick one to trade</span></div>' + sib.map((x) => {
+    const settled = x.state === 'resolved' || x.state === 'void', live = x.state === 'live';
+    const ya = live ? bestAsk(x) : r2(x.mid), na = live ? r2(1 - bestBid(x)) : r2(1 - x.mid);
+    return '<div class="evline' + (x.id === m.id ? ' on' : '') + '"><button class="evname" data-act="open" data-id="' + x.id + '"><b>' + shortQ(x) + '</b><span class="mono mut" style="font-size:11px">' + usd(x.volSol) + ' vol · ' + (isOpen(x) ? 'closes ' + hm(BASE + x.closeAt) : settled ? 'settled' : 'halted') + '</span></button>' +
+      '<span class="mono evpct">' + (settled ? '<span class="' + (x.outcome === 'yes' ? 'c-yes' : x.outcome === 'no' ? 'c-no' : 'mut') + '">' + (x.outcome || '').toUpperCase() + '</span>' : (x.state === 'auction' ? '~' : '') + Math.round(x.mid * 100) + '%') + '</span>' +
+      (settled || x.state === 'halted' ? '<span></span><span></span>' : '<button class="mini y" data-act="open" data-id="' + x.id + '" data-v="yes">Buy Yes ' + cents(ya) + '</button><button class="mini n" data-act="open" data-id="' + x.id + '" data-v="no">Buy No ' + cents(na) + '</button>') + '</div>';
+  }).join('') + '</section>';
+}
+function heroChart(m) {
+  const W = 600, H = 150;
+  const pts = m.hist.filter((h) => h.t >= m.created);
+  if (pts.length < 2) return '';
+  const t0 = pts[0].t, t1 = Math.max(S.t, t0 + 60);
+  const X = (t) => ((t - t0) / (t1 - t0) * W).toFixed(1);
+  const mids = pts.filter((h) => h.mid != null);
+  const top = Math.max(0.5, Math.ceil((Math.max(...mids.map((h) => h.mid)) + 0.05) * 10) / 10);
+  const oy = (v) => (H - v / top * H).toFixed(1);
+  const cy = (v) => (H - (clamp(v, 50, 100) - 50) / 50 * H).toFixed(1);
+  const line = mids.map((h) => X(h.t) + ',' + oy(h.mid)).join(' ');
+  const area = mids.length ? X(mids[0].t) + ',' + H + ' ' + line + ' ' + X(mids[mids.length - 1].t) + ',' + H : '';
+  const last = mids[mids.length - 1];
+  return '<svg width="100%" height="100%" viewBox="0 0 ' + W + ' ' + (H + 18) + '" preserveAspectRatio="none" role="img" aria-label="YES chance since the market opened" style="display:block;min-height:150px">' +
+    '<line x1="0" y1="0.5" x2="' + W + '" y2="0.5" stroke="#ECEDEF"/><line x1="0" y1="' + H / 2 + '" x2="' + W + '" y2="' + H / 2 + '" stroke="#ECEDEF"/><line x1="0" y1="' + (H - 0.5) + '" x2="' + W + '" y2="' + (H - 0.5) + '" stroke="#DFE1E5"/>' +
+    '<polygon points="' + area + '" fill="rgba(11,143,80,0.10)"/>' +
+    '<polyline points="' + line + '" fill="none" stroke="#0B8F50" stroke-width="2" vector-effect="non-scaling-stroke"/>' +
+    (last ? '<rect x="' + (X(last.t) - 4) + '" y="' + (oy(last.mid) - 4) + '" width="8" height="8" fill="#0B8F50"/>' : '') +
+    '<text x="2" y="' + (H + 14) + '" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">' + hm(BASE + t0) + ' open</text><text x="' + (W - 30) + '" y="' + (H + 14) + '" fill="#0E0F11" font-size="11" font-family="IBM Plex Mono, monospace">now</text>' +
+    '<text x="' + (W - 2) + '" y="12" text-anchor="end" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">' + Math.round(top * 100) + '%</text></svg>';
+}
+function heroHTML() {
+  const pool = S.markets.filter((m) => isOpen(m) && (S.cat === 'all' || m.launchpad === S.cat));
+  const seen = new Set(), top = [];
+  for (const m of pool.sort((a, b) => b.volSol - a.volSol)) { if (seen.has(m.tick)) continue; seen.add(m.tick); top.push(m); if (top.length === 5) break; }
+  if (!top.length) return '';
+  if (S.t >= (S.heroHold || 0) && S.t % 8 === 0 && S.t !== S.heroT) { S.heroIdx = ((S.heroIdx || 0) + 1) % top.length; S.heroT = S.t; }
+  const i = (S.heroIdx || 0) % top.length, m = top[i];
+  const yp = Math.round(m.mid * 100), ch = m.clear != null ? Math.round((m.mid - m.clear) * 100) : null, auc = m.state === 'auction';
+  const sibs = S.markets.filter((x) => x.tick === m.tick && x.id !== m.id && isOpen(x));
+  let h = '<section class="hero" aria-label="Top markets right now"><article class="hcard" data-x="featured">' +
+    '<div style="display:flex;align-items:center;gap:12px">' + ident(m, 40) + '<div style="display:flex;flex-direction:column;flex:1;min-width:0"><span class="meta" style="display:flex;gap:8px;align-items:center;font-size:12px"><span class="px c-cur" style="font-size:10px">#' + (i + 1) + ' TOP LAUNCH' + (S.cat === 'all' ? '' : ' ON ' + S.cat.toUpperCase()) + '</span>' + typeTag(m) + '</span><span class="mut" style="font-size:12px"><span class="mono" style="color:var(--tx);font-weight:600">$' + m.tick + '</span> · ' + m.name + '</span></div>' + srcBadge(m) + '</div>' +
+    '<button class="hq" data-act="open" data-id="' + m.id + '">' + question(m) + '</button>' +
+    '<div class="hmain"><div class="hodds" data-x="odds"><div style="display:flex;flex-direction:column"><span class="big" style="color:' + (yp >= 50 ? 'var(--yes)' : 'var(--tx)') + '">' + (auc ? '~' : '') + yp + '%</span><span class="mut" style="font-size:12px">' + (auc ? 'indicative · auction ' + mmss(m.auctionEnd - S.t) : 'chance') + (ch != null && !auc ? ' · <span class="mono ' + (ch >= 0 ? 'c-yes' : 'c-no') + '">' + (ch >= 0 ? '+' : '−') + Math.abs(ch) + ' since open</span>' : '') + '</span></div>' +
+    oddsButtons(m).replace('class="odds2"', 'class="odds2" style="flex-direction:column"') + '</div>' +
+    '<div data-x="chart" style="min-width:0;display:flex;flex-direction:column;gap:6px"><div class="legend"><span><span style="width:12px;height:2px;background:var(--yes)"></span>YES chance</span></div><div style="flex:1">' + heroChart(m) + '</div></div></div>' +
+    '<div class="hstats"><div data-x="source"><b>' + m.launchpad + '</b><span>event source</span></div><div><b>' + usd(m.volSol) + '</b><span>volume</span></div><div data-x="oi"><b>' + m.oi.toFixed(2) + ' / ' + cap(m).toFixed(2) + '</b><span>market size / max</span></div><div data-x="countdown"><b style="color:' + (m.closeAt - S.t < 60 ? 'var(--no)' : 'var(--tx)') + '">' + mmss(m.closeAt - S.t) + '</b><span>until trading closes</span></div></div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">' + (sibs.length ? '<span class="mut" style="font-size:12px">+' + sibs.length + ' more market' + (sibs.length > 1 ? 's' : '') + ' on $' + m.tick + '</span>' : '<span></span>') +
+    '<div class="hnav"><button class="arrow" data-act="hero" data-v="-1" aria-label="Previous top launch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="dots">' + top.map((_, k) => '<button data-act="herogo" data-v="' + k + '" aria-label="Show top launch ' + (k + 1) + '" aria-current="' + (k === i) + '"></button>').join('') + '</div><button class="arrow" data-act="hero" data-v="1" aria-label="Next top launch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div></div></article>';
+  const movers = pool.filter((x) => x.state === 'live' && x.clear != null).sort((a, b) => Math.abs(b.mid - b.clear) - Math.abs(a.mid - a.clear)).slice(0, 5);
+  h += '<aside class="movers" data-x="movers"><h2 class="h2" style="margin-bottom:6px">BIGGEST MOVERS</h2>' + (movers.length ? movers.map((x) => { const d = Math.round((x.mid - x.clear) * 100); return '<button class="mv" data-act="open" data-id="' + x.id + '"><span class="t">' + question(x) + '</span><span class="p">' + Math.round(x.mid * 100) + '%</span><span class="s">' + srcMark(x) + '</span><span class="d ' + (d >= 0 ? 'c-yes' : 'c-no') + '">' + (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d) + '</span></button>'; }).join('') : '<span class="mut" style="font-size:13px">Nothing moving yet.</span>') + '</aside></section>';
+  return h;
+}
+function renderFeed() {
+  const evs = events(S.markets.filter((m) => passes(m)));
+  const cnt = (f) => S.markets.filter(f).length;
+  let h = '<div class="feed-wrap"><div style="display:flex;flex-direction:column;gap:14px;min-width:0">';
+  if (S.filter === 'active' && !S.q) h += heroHTML();
+  h += '<nav class="cats" aria-label="Launchpads" data-x="category"><button data-act="cat" data-v="all" aria-pressed="' + (S.cat === 'all') + '">All <span class="mono fnt" style="font-size:11px">' + cnt((m) => passes(m, 'cat')) + '</span></button>' +
+    Object.keys(LP).map((k) => '<button data-act="cat" data-v="' + k + '" aria-pressed="' + (S.cat === k) + '"><i class="lpi" style="background:' + LP[k][0] + '">' + LP[k][1] + '</i>' + k + ' <span class="mono fnt" style="font-size:11px">' + cnt((m) => m.launchpad === k && passes(m, 'cat')) + '</span></button>').join('') + '</nav>';
+  h += '<div class="srcrow">' +
+    '<div class="grow"></div><div class="filters" role="group" aria-label="Status">' + STATUS.map(([id, l]) => '<button class="chip" data-act="filter" data-v="' + id + '" aria-pressed="' + (S.filter === id) + '">' + l + '<span>' + cnt((m) => FT[id](m) && passes(m, 'status')) + '</span></button>').join('') + '</div></div>';
+  h += evs.length ? '<div class="cards">' + evs.map(eventCard).join('') + '</div>' : '<div class="empty">No markets match these filters right now.</div>';
+  h += '</div><aside class="side">' + sidePositions() + sideSettled() + '<p class="fnt" style="font-size:12px;line-height:18px">Every market is Burbit\'s own: backed 1:1 by USDC, validated and settled from the data of the launchpad its token lives on.</p></aside></div>';
+  $('#view').innerHTML = h;
+}
+function posValue(m, p) {
+  if (!isOpen(m) && m.state !== 'halted') return payout(m, p);
+  if (m.state === 'auction' || m.state === 'halted') return p.yes * m.mid * U + p.no * (1 - m.mid) * U;
+  return p.yes * bestBid(m) * U + p.no * (1 - bestAsk(m)) * U;
+}
+function sidePositions() {
+  if (!S.wallet) return '<section style="display:flex;flex-direction:column;gap:12px"><h2 class="h2">YOUR POSITIONS</h2><div class="pcard" style="gap:10px"><span class="mut" style="font-size:13px">Connect a wallet to see positions and trade.</span><button class="btn solid-tx" data-act="wallet">Connect wallet</button></div></section>';
+  let h = '', tot = 0;
+  for (const id in S.pos) {
+    const m = mk(id), p = S.pos[id]; if (!m || p.claimed || p.yes + p.no === 0) continue;
+    if ((m.state === 'resolved' || m.state === 'void') && payout(m, p) === 0) continue;
+    const val = posValue(m, p), cost = p.cy + p.cn, pl = val - cost; tot += pl;
+    const claim = (m.state === 'resolved' || m.state === 'void') ? payout(m, p) : 0;
+    const legs = (p.yes ? '<span class="c-yes">' + p.yes + ' YES</span>' : '') + (p.yes && p.no ? ' · ' : '') + (p.no ? '<span class="c-no">' + p.no + ' NO</span>' : '');
+    if (claim > 0) h += '<div class="pcard" style="flex-direction:row;align-items:center;justify-content:space-between;background:rgba(230,0,0,.07);border-color:rgba(230,0,0,.3)"><div style="display:flex;flex-direction:column;gap:2px;font-size:12px"><span><span class="mono" style="font-weight:600">$' + m.tick + '</span><span class="mut"> ' + (m.state === 'void' ? 'void · refund' : 'settled ' + m.outcome.toUpperCase()) + '</span></span><span class="mono mut">' + legs + '</span></div><button class="btn solid-cur" data-act="claim" data-id="' + id + '">Claim ' + sol(claim) + '</button></div>';
+    else h += '<button class="pcard" data-act="open" data-id="' + id + '"><span style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span class="mono" style="font-weight:600">$' + m.tick + '</span>' + badge(m) + '</span><span style="font-size:13px;color:var(--tx2)">' + question(m) + '</span><span class="mono" style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span>' + legs + '</span><span class="' + (pl >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(pl) + '</span></span></button>';
+  }
+  if (!h) h = '<div class="empty" style="padding:16px;font-size:13px">No open positions yet.</div>';
+  return '<section style="display:flex;flex-direction:column;gap:12px" data-x="pos"><div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="h2">YOUR POSITIONS</h2><span class="mono ' + (tot >= 0 ? 'c-yes' : 'c-no') + '" style="font-size:12px">' + sgn(tot) + '</span></div>' + h + '</section>';
+}
+function sideSettled() {
+  const done = S.markets.filter((m) => m.state === 'resolved' || m.state === 'void').sort((a, b) => (b.resT || 0) - (a.resT || 0)).slice(0, 5);
+  return '<section style="display:flex;flex-direction:column"><h2 class="h2" style="margin-bottom:8px">JUST SETTLED</h2>' + done.map((m) => {
+    const why = m.state === 'void' ? 'launchpad data unreadable' : m.outcome === 'yes' ? (m.type === 'grad' ? 'graduated in ' + Math.floor(m.gradIn / 60) + 'm ' + (m.gradIn % 60) + 's' : 'dev pulled the bag') : (m.type === 'grad' ? 'didn\'t graduate in time' : 'dev kept the bag');
+    const c = m.state === 'void' ? 'var(--mut)' : m.outcome === 'yes' ? 'var(--yes)' : 'var(--no)';
+    return '<button class="srow" data-act="open" data-id="' + m.id + '" style="background:none;border-left:0;border-right:0;border-top:0;padding-inline:0;text-align:left"><span><span class="mono" style="font-weight:600">$' + m.tick + '</span><span class="mut"> ' + why + '</span></span><span class="mono" style="font-weight:600;color:' + c + '">' + (m.state === 'void' ? 'VOID' : m.outcome.toUpperCase()) + '</span></button>';
+  }).join('') + '</section>';
+}
+
+/* ---------- market page ---------- */
+function buildMarket() {
+  const m = mk(S.mid); if (!m) { go('feed'); return; }
+  $('#view').innerHTML =
+    '<nav class="crumbs" aria-label="Breadcrumb"><button data-act="nav" data-v="feed">Markets</button><span>/</span><button data-act="cat" data-v="' + m.launchpad + '">' + m.launchpad + '</button><span>/</span><span style="color:var(--tx)">$' + m.tick + '</span></nav>' +
+    '<div class="mk"><div class="mk-l"><div id="r-head"></div><div id="r-banner"></div><div id="r-event"></div>' +
+    '<div class="mrow"><section class="panel pad" id="r-odds" data-x="odds"></section><section class="panel" style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-width:0" id="r-chart" data-x="chart"></section></div>' +
+    '<section class="panel mstats" id="r-curve"></section>' +
+    '<div id="r-extra"></div>' +
+    '<div class="mrow2"><section class="panel bk" id="r-book" data-x="book"></section><section class="panel bk" id="r-trades" data-x="trades"></section></div></div>' +
+    '<div class="mk-r"><section class="panel" id="r-ticket"><div id="r-tform"></div><div id="r-tsum" style="padding:0 18px 18px;display:flex;flex-direction:column;gap:12px"></div></section>' +
+    '<section class="panel" style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="r-pos" data-x="pos"></section>' +
+    '<section class="panel" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px" id="r-orders" data-x="orders"></section>' +
+    '<section class="panel" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px" id="r-oi" data-x="oi"></section>' +
+    '<section class="rules" id="r-rules" data-x="rules"></section></div></div>';
+  S.lastTicketKey = '';
+  updateMarket(true);
+}
+function updateMarket(force) {
+  const m = mk(S.mid); if (!m) return;
+  const p = S.pos[m.id] || { yes: 0, no: 0, cy: 0, cn: 0 };
+  // head
+  const tleft = m.state === 'auction' ? m.auctionEnd - S.t : m.state === 'live' ? m.closeAt - S.t : m.state === 'halted' && m.halt === 'close' ? m.deadlineAt - S.t : 0;
+  const tlabel = m.state === 'auction' ? 'auction ends · then trading' : m.state === 'live' ? 'until trading closes · ' + hm(BASE + m.closeAt) : m.state === 'halted' && m.halt === 'close' ? 'until the deadline · ' + hm(BASE + m.deadlineAt) : '';
+  $('#r-head').innerHTML = '<div class="mhead">' + ident(m, 56) + '<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0"><div class="meta"><span class="mono" style="font-weight:600;color:var(--tx);font-size:13px">$' + m.tick + '</span><span>' + m.name + '</span>' + typeTag(m) + '<span>·</span>' + srcMark(m) + '<span>·</span><span>dev <span class="mono">' + m.dev + '</span></span><span>·</span><span>mint <span class="mono">' + m.mint + '</span></span></div><h1>' + question(m) + '</h1></div>' +
+    '<div class="timer" data-x="countdown"><span data-x="state">' + badge(m) + '</span>' + (tleft > 0 ? '<b style="color:' + (tleft < 60 && m.state === 'live' ? 'var(--no)' : 'var(--tx)') + '">' + mmss(tleft) + '</b><span class="fnt" style="font-size:11px">' + tlabel + '</span>' : '') + '</div></div>';
+  // banner
+  let bn = '';
+  const pay = payout(m, p);
+  if (m.state === 'auction') bn = '<div class="banner bn-auc" data-x="auction"><span class="badge b-auc"><i></i>AUCTION</span><span class="t"><strong>Opening auction · ' + mmss(m.auctionEnd - S.t) + ' left.</strong> Orders are collected, nothing fills yet. When the timer ends everyone who crosses fills at one clearing price, so arriving first gives no edge. Indicative price: <span class="mono">' + m.mid.toFixed(2) + '</span>.</span></div>';
+  else if (m.state === 'halted' && m.halt === 'grad') bn = '<div class="banner bn-cur"><span class="badge b-cur"><i></i>HALTED</span><span class="t"><strong>$' + m.tick + ' graduated on ' + m.launchpad + '.</strong> The next instruction that touched this market halted it and refunded every resting order. Settling YES…</span></div>';
+  else if (m.state === 'halted') bn = '<div class="banner bn-mut"><span class="badge b-mut"><i></i>HALTED</span><span class="t"><strong>Trading closed at ' + hm(BASE + m.closeAt) + '.</strong> Resting orders were refunded. ' + (m.type === 'grad' ? 'Settles YES if the token graduates before ' + clock(BASE + m.deadlineAt) + ', NO otherwise.' : 'Settles at ' + clock(BASE + m.deadlineAt) + ' from the dev wallet\'s balance.') + '</span></div>';
+  else if (m.state === 'resolved') bn = '<div class="banner ' + (m.outcome === 'yes' ? 'bn-yes' : 'bn-no') + '"><span class="badge ' + (m.outcome === 'yes' ? 'b-live' : 'b-no') + '"><i></i>SETTLED ' + m.outcome.toUpperCase() + '</span><span class="t"><strong>' + (m.outcome === 'yes' ? (m.type === 'grad' ? 'Graduated. YES wins.' : 'The dev pulled the bag. YES wins.') : (m.type === 'grad' ? 'The deadline passed before the token graduated. NO wins.' : 'No rug before the deadline. NO wins.')) + '</strong> Each winning share redeems for $1.</span>' + (pay > 0 ? '<button class="btn solid-cur" data-act="claim" data-id="' + m.id + '">Claim ' + usd(pay) + '</button>' : '') + '</div>';
+  else if (m.state === 'void') bn = '<div class="banner bn-mut" data-x="void"><span class="badge b-mut"><i></i>VOID</span><span class="t"><strong>The launchpad account couldn\'t be read</strong> (its layout changed), so Burbit refused to settle it. Every YES and every NO share redeems for 50¢, so each pair gets its full $1 back.</span>' + (pay > 0 ? '<button class="btn" data-act="claim" data-id="' + m.id + '">Redeem ' + usd(pay) + '</button>' : '') + '</div>';
+  else if (m.oi >= cap(m) - 1e-6) bn = '<div class="banner bn-cur" data-x="oi"><span class="badge b-cur"><i></i>FULL</span><span class="t"><strong>This market has reached its maximum size.</strong> No new YES+NO pairs can be created until someone merges or the limit moves. You can still buy shares that others sell, sell, and merge.</span></div>';
+  $('#r-banner').innerHTML = bn;
+  $('#r-event').innerHTML = siblings(m);
+  // odds
+  const settled = m.state === 'resolved' || m.state === 'void';
+  const yp = settled ? (m.state === 'void' ? 50 : m.outcome === 'yes' ? 100 : 0) : Math.round(m.mid * 100);
+  const ch = m.clear != null && !settled ? Math.round((m.mid - m.clear) * 100) : null;
+  $('#r-odds').innerHTML = '<div class="oddsbig"><div style="display:flex;flex-direction:column;gap:2px"><span class="lbl" style="color:var(--yes)">YES' + (m.type === 'bonded' ? ' · RUG' : '') + '</span><span class="y">' + (m.state === 'auction' ? '~' : '') + yp + '%</span></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span class="lbl" style="color:var(--no)">NO</span><span class="n">' + (m.state === 'auction' ? '~' : '') + (100 - yp) + '%</span></div></div>' +
+    '<div class="split"><div style="width:' + yp + '%;background:var(--yes)"></div><div style="flex:1;background:var(--no)"></div></div>' +
+    '<div class="mono" style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut)"><span>' + (m.state === 'live' ? 'bid ' + cents(bestBid(m)) + ' · ask ' + cents(bestAsk(m)) : m.state === 'auction' ? 'indicative, not traded' : settled ? 'final' : 'last ' + m.mid.toFixed(2)) + '</span>' + (ch != null ? '<span class="' + (ch >= 0 ? 'c-yes' : 'c-no') + '">' + (ch >= 0 ? '+' : '−') + Math.abs(ch) + ' since auction</span>' : '') + '</div>';
+  // curve
+  const f = forcing(m.pct);
+  $('#r-curve').innerHTML = '<div data-x="odds"><b class="mono">' + (m.state === 'live' ? cents(bestAsk(m)) + ' / ' + cents(r2(1 - bestBid(m))) : '—') + '</b><span>Yes / No price</span></div>' +
+    '<div><b class="mono">' + usd(m.volSol) + '</b><span>volume</span></div>' +
+    '<div data-x="oi"><b class="mono">' + m.oi.toFixed(2) + ' / ' + cap(m).toFixed(2) + '</b><span>market size / max</span></div>' +
+    '<div data-x="countdown"><b class="mono">' + clock(BASE + m.deadlineAt).slice(0, 5) + '</b><span>deadline · closes ' + hm(BASE + m.closeAt) + '</span></div>' +
+    '<div data-x="source"><b>' + m.launchpad + '</b><span>event source</span></div>';
+  let ex = '';
+  if (m.type === 'bonded') {
+    const price = 30 / Math.pow(1073 - m.pct / 100 * 793.1, 2) * 1073 * 1e-6 * 1000;
+    const bag = m.bagTokens * (raised(m.pct) + 30) / ((1073 - m.pct / 100 * 793.1) * 1e6) * SOLUSD;
+    const cov = m.bond / bag;
+    ex = '<section class="panel pad" data-x="bonded" style="display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="h2" style="color:var(--cur)">CREATOR BOND</h2><span class="tag" style="color:var(--cur);border-color:rgba(230,0,0,.4)">BONDED</span></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px"><div class="kv" style="text-align:left"><b>' + usd(m.bond) + '</b><span>bond posted</span></div><div class="kv" style="text-align:left"><b>' + usd(bag) + '</b><span>bag worth now</span></div><div class="kv" style="text-align:left"><b class="' + (cov >= 1 ? 'c-yes' : 'c-no') + '">' + cov.toFixed(2) + '×</b><span>coverage</span></div></div>' +
+      '<p style="font-size:12px;line-height:18px;color:var(--mut)">The dev locked their bag in Burbit\'s escrow and wrote this market. YES is protection: if they take the bag back before 19:00, YES holders are paid $1 per share from the bond. Only the dev holds NO.</p></section>';
+  } else if (m.type === 'rug') {
+    ex = '<div class="banner bn-no" data-x="openrug"><span class="badge b-no"><i></i>SMALL MAX</span><span class="t">Open rug market. It settles from the dev wallet\'s token balance, which the dev could move from a second wallet, so its maximum size stays at $75.</span></div>';
+  }
+  $('#r-extra').innerHTML = ex;
+  $('#r-chart').innerHTML = chartHTML(m);
+  // book
+  const bk = book(m);
+  const mx = Math.max(1, ...bk.asks.map((x) => x.s), ...bk.bids.map((x) => x.s));
+  const bookLive = m.state === 'live' || m.state === 'auction';
+  const noView = S.bookSide === 'no';
+  const flip = (l) => ({ p: r2(1 - l.p), s: l.s, you: l.you });
+  const asks = noView ? bk.bids.map(flip) : bk.asks, bids = noView ? bk.asks.map(flip) : bk.bids;
+  const lvl2 = (l, ask) => '<div class="lvl"><span class="d" style="width:' + Math.round(l.s / mx * 100) + '%;background:' + (ask ? 'rgba(230,0,0,0.07)' : 'rgba(11,143,80,0.10)') + '"></span><span style="color:' + (ask ? '#C81E1E' : 'var(--yes)') + '">' + cents(l.p) + (l.you ? '<span class="you">YOU</span>' : '') + '</span><span style="text-align:right">' + l.s + '</span><span style="text-align:right;color:var(--mut)">' + usd(l.p * l.s * U) + '</span></div>';
+  const bA = asks.length ? asks[0].p : 0, bB = bids.length ? bids[0].p : 0;
+  $('#r-book').innerHTML = '<div class="bk-h"><h2 class="h2">ORDER BOOK</h2><div class="bkseg" role="group" aria-label="Show the order book for"><button class="y" data-act="bookside" data-v="yes" aria-pressed="' + !noView + '">Trade Yes</button><button class="n" data-act="bookside" data-v="no" aria-pressed="' + noView + '">Trade No</button></div></div>' + (bookLive ?
+    '<div class="lvl" style="font:600 10px var(--sans);letter-spacing:.06em;color:var(--fnt);padding-top:0"><span>PRICE (' + (noView ? 'NO' : 'YES') + ')</span><span style="text-align:right">SHARES</span><span style="text-align:right">TOTAL</span></div>' +
+    '<div class="lbl" style="padding:2px 16px;color:#C81E1E">Asks · people selling ' + (noView ? 'NO' : 'YES') + '</div>' +
+    asks.slice(0, 5).reverse().map((l) => lvl2(l, true)).join('') +
+    '<div class="spread"><span>' + (m.state === 'auction' ? 'auction: orders wait, nothing matches' : 'spread ' + (bA - bB).toFixed(2)) + '</span><span>last ' + (noView ? r2(1 - m.mid) : m.mid).toFixed(2) + '</span></div>' +
+    bids.slice(0, 5).map((l) => lvl2(l, false)).join('') +
+    '<div class="lbl" style="padding:2px 16px;color:var(--yes)">Bids · people buying ' + (noView ? 'NO' : 'YES') + '</div>'
+    : '<div class="empty" style="margin:0 16px;padding:20px;font-size:13px">Book closed. Every resting order was cancelled and returned at halt.</div>');
+  // trades
+  const kc = { MINT: 'color:var(--cur);border-color:rgba(230,0,0,.35)', TRANSFER: '', MERGE: '', AUCTION: 'color:var(--info);border-color:rgba(71,85,105,.35)' };
+  $('#r-trades').innerHTML = '<div class="bk-h"><h2 class="h2">TRADES</h2><span>mint = new pair · merge = pair burned</span></div><div class="trow hd"><span>TIME</span><span>SIDE</span><span>PRICE</span><span style="text-align:right">SHARES</span><span style="text-align:right">KIND</span></div>' +
+    (m.trades.length ? m.trades.slice(0, 11).map((t) => '<div class="trow"' + (t.you ? ' style="background:rgba(230,0,0,.06)"' : '') + '><span class="mut">' + clock(BASE + t.t) + '</span><span style="color:' + (t.side.includes('YES') ? 'var(--yes)' : t.side.includes('NO') ? 'var(--no)' : 'var(--info)') + '">' + t.side + '</span><span>' + cents(t.p) + '</span><span style="text-align:right">' + t.n + (t.you ? ' <span class="px" style="font-size:9px;color:var(--cur)">YOU</span>' : '') + '</span><span style="justify-self:end" class="tag" ' + (kc[t.kind] ? 'style="' + kc[t.kind] + '"' : '') + '>' + t.kind + '</span></div>').join('') : '<div class="empty" style="margin:0 16px;padding:20px;font-size:13px">No trades yet. The auction hasn\'t cleared.</div>');
+  // ticket
+  const key = [m.id, m.state, T.side, T.tab, T.act, !!S.wallet, m.oi >= cap(m) - 1e-6, held(m, 'yes'), held(m, 'no')].join('|');
+  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('#r-tform');
+  if (force || (key !== S.lastTicketKey && !focused) || (key.split('|')[1] !== S.lastTicketKey.split('|')[1])) { renderTicketForm(m); S.lastTicketKey = key; }
+  renderTicketSum(m);
+  // position
+  const val = posValue(m, p), cost = p.cy + p.cn, pl = val - cost;
+  const has = p.yes + p.no > 0 && !p.claimed;
+  let ph = '<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="h2">YOUR POSITION</h2>' + (has && !settled ? '<span class="mono ' + (pl >= 0 ? 'c-yes' : 'c-no') + '" style="font-size:12px">' + sgn(pl) + (cost > 0 ? ' · ' + (pl >= 0 ? '+' : '−') + Math.abs(Math.round(pl / cost * 100)) + '%' : '') + '</span>' : '') + '</div>';
+  if (!S.wallet) ph += '<span class="mut" style="font-size:13px">Connect a wallet to trade.</span>';
+  else if (!has) ph += '<span class="mut" style="font-size:13px">' + (p.claimed ? 'Claimed. Nothing left in this market.' : 'No shares in this market yet.') + '</span>';
+  else {
+    const legs = (p.yes ? '<span class="c-yes">' + p.yes + ' YES</span>' : '') + (p.yes && p.no ? ' + ' : '') + (p.no ? '<span class="c-no">' + p.no + ' NO</span>' : '');
+    const avg = (p.yes ? 'YES avg ' + (p.cy / p.yes / U).toFixed(2) : '') + (p.yes && p.no ? ' · ' : '') + (p.no ? 'NO avg ' + (p.cn / p.no / U).toFixed(2) : '');
+    ph += '<div class="mono" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span>' + legs + '</span><span class="mut" style="font-size:12px">' + avg + (settled ? '' : ' · worth ' + usd(val) + '') + '</span></div>';
+    const pairs = Math.min(p.yes, p.no);
+    const btns = [];
+    if (m.state === 'live') {
+      if (p.yes) btns.push('<button class="btn" data-act="sell" data-v="yes" data-x="cashout">Sell all ' + p.yes + ' YES · ' + usd(p.yes * bestBid(m) * U - feeOf(p.yes, bestBid(m))) + '</button>');
+      if (p.no) btns.push('<button class="btn" data-act="sell" data-v="no" data-x="cashout">Sell ' + p.no + ' NO · ' + usd(p.no * (1 - bestAsk(m)) * U - feeOf(p.no, bestAsk(m))) + '</button>');
+    }
+    if (pairs > 0 && !settled) btns.push('<button class="btn" data-act="merge" data-x="merge">Merge ' + pairs + ' pairs → ' + usd((pairs * U)) + '</button>');
+    if (settled && payout(m, p) > 0) btns.push('<button class="btn solid-cur" data-act="claim" data-id="' + m.id + '">' + (m.state === 'void' ? 'Redeem ' : 'Claim ') + usd(payout(m, p)) + '</button>');
+    if (settled && payout(m, p) === 0) btns.push('<span class="mut" style="font-size:12px">These shares lost. Nothing to claim.</span>');
+    if (m.state === 'halted') btns.push('<span class="mut" style="font-size:12px">Trading halted. You can still merge pairs; claim opens at settlement.</span>');
+    if (btns.length) ph += '<div style="display:flex;flex-wrap:wrap;gap:8px">' + btns.join('') + '</div>';
+  }
+  $('#r-pos').innerHTML = ph;
+  // my orders
+  const mine = S.orders.filter((o) => o.mid === m.id);
+  $('#r-orders').innerHTML = '<h2 class="h2">YOUR ORDERS</h2>' + (mine.length ? '<div class="olist">' + mine.slice(0, 6).map(orderRow).join('') + '</div>' : '<span class="mut" style="font-size:13px">No orders. "Set your odds" places one.</span>');
+  $('#r-orders').hidden = !S.wallet;
+  // OI
+  const c = cap(m), n = 24, filled = Math.round(n * Math.min(1, m.oi / Math.max(c, 0.001)));
+  let ob = '<div class="blocks" aria-hidden="true" style="grid-template-columns:repeat(' + n + ',minmax(0,1fr))">';
+  for (let i = 0; i < n; i++) ob += '<span style="height:8px;background:' + (i < filled ? (m.oi >= c - 1e-6 ? 'var(--cur)' : 'var(--tx2)') : 'var(--empty)') + '"></span>';
+  ob += '</div>';
+  $('#r-oi').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="h2">MARKET SIZE</h2><span class="mono" style="font-size:13px">' + m.oi.toFixed(2) + ' <span class="fnt">/ ' + usd(c) + ' max</span></span></div>' + ob +
+    '<p style="font-size:12px;line-height:18px;color:var(--mut)">' + (m.type === 'grad' ? 'USDC locked in this market. The max is a safety limit that keeps rigging the result more expensive than it could pay.' : m.type === 'bonded' ? 'The max is the creator\'s bond, so every YES share is fully paid if the dev rugs.' : 'The max stays small because the dev could decide this from another wallet.') + '</p>';
+  // rules
+  $('#r-rules').innerHTML = '<h2 class="h2" style="color:var(--tx)">HOW THIS SETTLES</h2>' + (m.type === 'grad'
+    ? '<span><span class="c-yes" style="font-weight:600">YES</span> the moment $' + m.tick + '\' graduates on ' + m.launchpad + ' before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> if ' + clock(BASE + m.deadlineAt) + ' passes first. Trading stops 5 minutes earlier, at ' + clock(BASE + m.closeAt) + '.</span><span>Read straight from ' + m.launchpad + '\'s on-chain data. No oracle, no vote. The dev wallet can\'t trade this market.</span>'
+    : m.type === 'bonded' ? '<span><span class="c-yes" style="font-weight:600">YES</span> in the same instruction the dev takes their bag out of escrow before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> if the bag is still in escrow at the deadline. The dev gets the bond back and keeps what they earned selling YES.</span>'
+    : '<span><span class="c-yes" style="font-weight:600">YES</span> if the dev wallet\'s balance of $' + m.tick + ' falls below half its launch bag before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> otherwise. Read from the dev\'s token account.</span>');
+  // mobile bar
+  const mb = $('#mobbar');
+  mb.hidden = !(m.state === 'live');
+  document.body.classList.toggle('has-mobbar', m.state === 'live');
+  if (m.state === 'live') mb.innerHTML = '<button class="btn solid-yes" data-act="mside" data-v="yes">Buy YES <span class="mono">' + cents(bestAsk(m)) + '</span></button><button class="btn solid-no" data-act="mside" data-v="no"' + (m.type === 'bonded' ? ' disabled' : '') + '>Buy NO <span class="mono">' + cents(r2(1 - bestBid(m))) + '</span></button>';
+}
+function orderRow(o) {
+  const m = mk(o.mid);
+  const st = { open: ['OPEN', 'b-live'], partial: ['PARTIAL', 'b-live'], queued: ['IN AUCTION', 'b-auc'], filled: ['FILLED', 'b-mut'], voided: ['VOIDED', 'b-cur'], refunded: ['REFUNDED', 'b-mut'], cancelled: ['CANCELLED', 'b-mut'], expired: ['EXPIRED', 'b-mut'] }[o.status];
+  const canCancel = ['open', 'partial', 'queued'].includes(o.status);
+  return '<div class="orow"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="mono"><span class="mut">' + o.act.toUpperCase() + '</span> <span class="' + (o.side === 'yes' ? 'c-yes' : 'c-no') + '">' + o.side.toUpperCase() + '</span> ' + o.filled + '/' + o.shares + ' @ ' + cents(o.price) + (S.view === 'port' && m ? ' <span class="mut">$' + m.tick + '</span>' : '') + '</span><span class="mut" style="font-size:11px">' + (o.note ? o.note : 'limit order') + (o.rebate ? ' · rebate +' + usd(o.rebate) : '') + '</span></div><div style="display:flex;align-items:center;gap:8px"><span class="badge ' + st[1] + '"><i></i>' + st[0] + '</span>' + (canCancel ? '<button class="btn ghost" style="height:28px;padding:0 8px;font-size:12px" data-act="cancel" data-id="' + o.id + '">Cancel</button>' : '') + '</div></div>';
+}
+function chartHTML(m) {
+  const W = 900, H = 170;
+  const t0 = m.created != null ? Math.max(m.created, S.t - 600) : S.t - 180;
+  const t1 = Math.max(m.deadlineAt || S.t, S.t + 30);
+  const X = (t) => ((t - t0) / (t1 - t0) * W).toFixed(1);
+  const pts = m.hist.filter((h) => h.t >= t0);
+  const mids = pts.filter((h) => h.mid != null).map((h) => h.mid);
+  const top = Math.max(0.5, Math.ceil((Math.max(0, ...mids) + 0.05) * 10) / 10);
+  const oy = (v) => (H - v / top * H).toFixed(1);
+  const cy = (v) => (H - (clamp(v, 50, 100) - 50) / 50 * H).toFixed(1);
+  const op = pts.filter((h) => h.mid != null).map((h) => X(h.t) + ',' + oy(h.mid)).join(' ');
+  const cp = pts.map((h) => X(h.t) + ',' + cy(h.pct)).join(' ');
+  const aucEnd = m.auctionEnd != null ? Math.min(m.auctionEnd, S.t) : null;
+  const last = pts.filter((h) => h.mid != null).slice(-1)[0];
+  let s = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div class="legend"><span><span style="width:12px;height:2px;background:var(--yes)"></span>YES chance</span><span><span style="width:10px;height:10px;background:rgba(71,85,105,.2)"></span>Opening auction</span></div><span class="mono mut" style="font-size:12px">' + hm(BASE + t0) + ' → ' + hm(BASE + t1) + ' deadline</span></div>';
+  s += '<div style="overflow-x:auto"><svg width="100%" height="200" viewBox="-44 0 ' + (W + 88) + ' 196" preserveAspectRatio="none" role="img" aria-label="YES chance over time" style="min-width:520px;display:block">';
+  if (aucEnd != null && aucEnd > t0) s += '<rect x="' + X(Math.max(t0, m.auctionEnd - 60)) + '" y="0" width="' + (X(aucEnd) - X(Math.max(t0, m.auctionEnd - 60))).toFixed(1) + '" height="' + H + '" fill="rgba(71,85,105,0.10)"/>';
+  if (m.closeAt && m.closeAt < t1) s += '<rect x="' + X(m.closeAt) + '" y="0" width="' + (X(t1) - X(m.closeAt)).toFixed(1) + '" height="' + H + '" fill="rgba(139,143,152,0.06)"/><text x="' + (Number(X(m.closeAt)) + 6) + '" y="14" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">trading closed</text>';
+  s += '<line x1="0" y1="0.5" x2="' + W + '" y2="0.5" stroke="#ECEDEF"/><line x1="0" y1="' + H / 2 + '" x2="' + W + '" y2="' + H / 2 + '" stroke="#ECEDEF"/><line x1="0" y1="' + (H - 0.5) + '" x2="' + W + '" y2="' + (H - 0.5) + '" stroke="#DFE1E5"/>';
+  if (op) s += '<polyline points="' + op + '" fill="none" stroke="#0B8F50" stroke-width="2"/>';
+  const nx = X(Math.min(S.t, t1));
+  s += '<line x1="' + nx + '" y1="0" x2="' + nx + '" y2="' + H + '" stroke="#0E0F11" stroke-dasharray="2 3"/>';
+  if (last) s += '<rect x="' + (nx - 4) + '" y="' + (oy(last.mid) - 4) + '" width="8" height="8" fill="#0B8F50"/>';
+  s += '<text x="-40" y="12" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">' + Math.round(top * 100) + '%</text><text x="-40" y="' + (H / 2 + 4) + '" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">' + Math.round(top * 50) + '%</text><text x="-40" y="' + H + '" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">0%</text>';
+  s += '<text x="0" y="190" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">' + hm(BASE + t0) + '</text><text x="' + (Number(nx) + 6) + '" y="190" fill="#0E0F11" font-size="11" font-family="IBM Plex Mono, monospace">now</text><text x="' + (W - 40) + '" y="190" fill="#7A7F88" font-size="11" font-family="IBM Plex Mono, monospace">' + hm(BASE + t1) + '</text>';
+  return s + '</svg></div>';
+}
+
+/* ---------- ticket ---------- */
+const sellPx = (m, side) => side === 'yes' ? bestBid(m) : r2(1 - bestAsk(m));
+function held(m, side) { const p = S.pos[m.id]; return p && !p.claimed ? (side === 'yes' ? p.yes : p.no) : 0; }
+function defaultPriceC(m, act, side) { return String(Math.round(parseFloat(defaultPrice(m, act, side)) * 100)); }
+function defaultPrice(m, act, side) {
+  if (!m || m.state !== 'live') return (act === 'buy' ? (side === 'yes' ? r2(m ? m.mid : 0.3) : r2(1 - (m ? m.mid : 0.3))) : 0.5).toFixed(2);
+  const v = act === 'buy' ? (side === 'yes' ? bestBid(m) - 0.02 : 1 - bestAsk(m) - 0.02) : (side === 'yes' ? bestAsk(m) + 0.02 : 1 - bestBid(m) + 0.02);
+  return r2(clamp(v, 0.01, 0.99)).toFixed(2);
+}
+const OTYPES = { dollars: 'Dollars', shares: 'Shares', limit: 'Limit' };
+const EXP = { gtc: 'Good \'til canceled', close: 'Until trading closes', m5: '5 minutes' };
+function renderTicketForm(m) {
+  const el = $('#r-tform');
+  if (m.state === 'auction') { T.tab = 'limit'; T.act = 'buy'; }
+  if (T.act === 'sell' && T.tab === 'dollars') T.tab = 'shares';
+  if (m.type === 'bonded' && T.side === 'no') T.side = 'yes';
+  const closed = m.state !== 'live' && m.state !== 'auction';
+  if (closed) {
+    el.innerHTML = '<div class="tk-body"><span class="h2">TRADING ' + (m.state === 'halted' ? 'HALTED' : 'OVER') + '</span><p class="mut" style="font-size:13px;line-height:20px">' + (m.state === 'halted' ? 'No new orders. Resting orders were cancelled and returned when the market halted. Merging YES+NO pairs still works.' : m.state === 'void' ? 'This market was voided. Every share redeems for 50¢.' : 'This market has settled. Each winning share redeems for $1.') + '</p></div>';
+    return;
+  }
+  const buy = T.act === 'buy', auc = m.state === 'auction';
+  const px = (side) => auc ? (side === 'yes' ? r2(m.mid) : r2(1 - m.mid)) : buy ? priceFor(m, side) : sellPx(m, side);
+  const types = auc ? ['limit'] : buy ? ['dollars', 'shares', 'limit'] : ['shares', 'limit'];
+  let h = '<div class="tk-top"><div class="tk-bs" role="tablist" aria-label="Buy or sell" data-x="buysell"><button role="tab" data-act="tact" data-v="buy" aria-selected="' + buy + '">BUY</button><button role="tab" data-act="tact" data-v="sell" aria-selected="' + !buy + '"' + (auc ? ' disabled title="Nothing to sell until the auction clears"' : '') + '>SELL</button></div>' +
+    '<label class="otype" data-x="' + (T.tab === 'limit' ? 'limit' : 'quick') + '"><span class="sr">Order type</span><select id="otype">' + types.map((k) => '<option value="' + k + '"' + (T.tab === k ? ' selected' : '') + '>' + OTYPES[k] + '</option>').join('') + '</select></label></div>';
+  h += '<div class="tk-body">';
+  h += '<div class="tk-q">' + ident(m, 28) + '<span>' + question(m) + '</span></div>';
+  if (auc) h += '<div class="warn" style="background:var(--info-t);color:#334155">Opening auction: your order waits and fills at one clearing price when the timer ends. You never pay more than your limit.</div>';
+  const pill = (side) => '<button class="yn ' + (side === 'yes' ? 'y' : 'n') + '" data-act="side" data-v="' + side + '" aria-pressed="' + (T.side === side) + '"' + ((side === 'no' && m.type === 'bonded') || (!buy && !held(m, side)) ? ' disabled' : '') + '>' + (side === 'yes' ? (m.type === 'bonded' ? 'PROTECTION' : 'YES') : 'NO') + ' ' + cents(px(side)) + '</button>';
+  h += '<div class="ynpill">' + pill('yes') + pill('no') + '</div>';
+  if (!buy) h += '<span class="hold">You hold <span class="mono c-yes">' + held(m, 'yes') + ' YES</span> · <span class="mono c-no">' + held(m, 'no') + ' NO</span></span>';
+  else if (m.type === 'bonded') h += '<span class="hold">Only the creator holds NO in a bonded market.</span>';
+  if (T.tab === 'dollars') {
+    h += '<div class="kfield"><label for="amt">Amount</label><div class="kin"><span class="mono mut">$</span><input id="amt" inputmode="decimal" autocomplete="off" value="' + T.amount + '"></div></div>' +
+      '<div class="presets">' + ['5', '10', '25', '50'].map((v) => '<button data-act="preset" data-v="' + v + '">$' + v + '</button>').join('') + '</div>';
+  } else {
+    h += '<div class="kfield"><label for="ls">Shares</label><div class="kin"><input id="ls" inputmode="numeric" autocomplete="off" value="' + T.shares + '" style="text-align:right"></div></div>';
+    if (!buy) { const hv = held(m, T.side); h += '<div class="presets" style="grid-template-columns:repeat(3,minmax(0,1fr))">' + [[0.25, '25%'], [0.5, '50%'], [1, 'Max']].map(([f, l]) => '<button data-act="spreset" data-v="' + Math.floor(hv * f) + '">' + l + '</button>').join('') + '</div>'; }
+    h += '<span class="kline">' + (buy ? 'Predictions account · ' + usd(S.bal) + ' available' : 'You can sell up to ' + held(m, T.side) + ' ' + T.side.toUpperCase()) + '</span>';
+  }
+  if (T.tab === 'limit') {
+    const a = auc ? '—' : cents(T.side === 'yes' ? bestAsk(m) : r2(1 - bestBid(m))), b = auc ? '—' : cents(T.side === 'yes' ? bestBid(m) : r2(1 - bestAsk(m)));
+    h += '<div class="kfield"><label for="lpc">Limit price</label><div class="kin"><input id="lpc" inputmode="numeric" autocomplete="off" value="' + T.priceC + '" style="text-align:right"><span class="mono">¢</span></div></div>' +
+      '<span class="kline">Ask: ' + a + ' · Bid: ' + b + '</span>' +
+      '<div class="kfield"><label for="exp">Expiration</label><div class="kin"><select id="exp">' + Object.keys(EXP).map((k) => '<option value="' + k + '"' + (T.exp === k ? ' selected' : '') + '>' + EXP[k] + '</option>').join('') + '</select></div></div>' +
+      '<label class="kcheck"><span>Submit as resting order only</span><input type="checkbox" id="po"' + (T.postOnly ? ' checked' : '') + '></label>';
+  }
+  if (m.oi >= cap(m) - 1e-6 && m.state === 'live' && buy) h += '<div class="warn">Market full: no new YES+NO pairs can be created. Buys only fill against shares people are selling.</div>';
+  h += '</div>';
+  el.innerHTML = h;
+}
+function quote(m) {
+  const buy = T.act === 'buy';
+  if (T.tab === 'dollars') {
+    const p = priceFor(m, T.side), amt = parseFloat(T.amount) || 0;
+    let n = Math.max(0, Math.floor(amt / (p * U + 0.07 * p * (1 - p) * U) + 1e-9)), clip = '';
+    const room = capRoomPairs(m);
+    if (room <= 0) { if (n > 35) { n = 35; clip = 'Only 35 shares are for sale at this price (market full).'; } }
+    else if (n > room + 40) { n = room + 40; clip = 'Clipped by the market\'s maximum size.'; }
+    return { p, n, cost: n * p * U, fee: feeOf(n, p), clip };
+  }
+  const n = Math.max(0, parseInt(T.shares, 10) || 0);
+  if (T.tab === 'shares') {
+    const p = buy ? priceFor(m, T.side) : sellPx(m, T.side);
+    const hv = held(m, T.side);
+    return { p, n: buy ? n : Math.min(n, hv), cost: n * p * U, fee: feeOf(n, p), clip: !buy && n > hv ? 'You only hold ' + hv + ' ' + T.side.toUpperCase() + '.' : '' };
+  }
+  const lp = (parseFloat(T.priceC) || 0) / 100;
+  return { p: lp, n, cost: lp * n * U, fee: 0, yesEq: T.side === 'yes' ? lp : r2(1 - lp) };
+}
+function renderTicketSum(m) {
+  const el = $('#r-tsum');
+  if (m.state !== 'live' && m.state !== 'auction') { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const q = quote(m), side = T.side.toUpperCase(), buy = T.act === 'buy', c = T.side === 'yes' ? 'var(--yes)' : 'var(--no)';
+  const payout = q.n * U, when = clock(BASE + m.deadlineAt).slice(0, 5);
+  let rows;
+  if (buy) rows = [['Cost', usd(q.cost + q.fee), 'big'], ['Max payout', usd(payout), 'pay', 'if ' + side + ' · settles by ' + when]];
+  else rows = [[T.tab === 'limit' ? 'You receive if filled' : 'You receive', usd(Math.max(0, q.n * q.p * U - q.fee)), 'pay', q.n + ' ' + side + ' at ' + cents(q.p)]];
+  const detail = buy
+    ? (T.tab === 'limit' ? (m.state === 'auction' ? 'Waits for the auction' : 'Rests on the book') + ' as a ' + (T.side === 'yes' ? 'bid' : 'ask') + ' at ' + cents(q.yesEq) + ' YES · no fee as maker' : q.n + ' shares at ' + cents(q.p) + ' · fee ' + usd(q.fee))
+    : (T.tab === 'limit' ? 'Rests on the book · your shares are held until it fills' : 'Sells now at the best bid · fee ' + usd(q.fee));
+  if (T.review && S.wallet) {
+    el.innerHTML = '<div class="review" role="dialog" aria-label="Review order"><span class="h2">REVIEW ' + (buy ? 'BUY' : 'SELL') + '</span>' +
+      '<p style="font-size:15px;line-height:22px">' + (buy ? 'Buy' : 'Sell') + ' <b class="mono" style="color:' + c + '">' + q.n.toLocaleString('en-US') + ' ' + side + '</b> at <b class="mono">' + cents(q.p) + '</b>' + (T.tab === 'limit' ? ' or better' : '') + '</p>' +
+      '<dl class="sum">' + (buy ? '<div><dt>You pay</dt><dd>' + usd(q.cost + q.fee) + '</dd></div><div><dt>You get if ' + side + ' wins</dt><dd style="color:' + c + '">' + usd(payout) + '</dd></div><div><dt>Profit if ' + side + ' wins</dt><dd style="color:' + c + '">' + sgn(payout - q.cost - q.fee) + '</dd></div>' : '<div><dt>You receive</dt><dd>' + usd(Math.max(0, q.n * q.p * U - q.fee)) + '</dd></div>') +
+      (T.tab === 'limit' ? '<div><dt>Expiration</dt><dd>' + EXP[T.exp] + '</dd></div>' : '') + '</dl>' +
+      '<div class="two"><button class="btn ghost" data-act="editorder">Edit</button><button class="cta" style="background:' + c + ';height:44px" data-act="submit">Confirm ' + (buy ? 'buy' : 'sell') + '</button></div></div>';
+    return;
+  }
+  el.innerHTML = '<dl class="sum ksum">' + rows.map((r) => '<div><dt>' + r[0] + (r[3] ? '<small>' + r[3] + '</small>' : '') + '</dt><dd class="' + r[2] + '"' + (r[2] === 'pay' ? ' style="color:' + c + '"' : '') + '>' + r[1] + '</dd></div>').join('') + '</dl>' +
+    '<span class="kline">' + detail + '</span>' +
+    (q.clip ? '<span class="err" style="color:var(--cur)">' + q.clip + '</span>' : '') + (T.err ? '<span class="err" role="alert">' + T.err + '</span>' : '') +
+    '<button class="cta" style="background:' + (S.wallet ? c : 'var(--cur)') + '" data-act="' + (S.wallet ? 'review' : 'wallet') + '"' + (S.wallet && q.n <= 0 ? ' disabled' : '') + '>' + (!S.wallet ? 'Connect wallet to trade' : 'Review ' + (buy ? 'buy' : 'sell')) + '</button>' +
+    '<span class="note">' + (buy ? 'USDC moves from your wallet into this market\'s vault when the order fills. Each winning share pays $1.' : 'Selling before settlement locks in your gain or loss now.') + '</span>';
+}
+function validate(m) {
+  const q = quote(m), buy = T.act === 'buy';
+  if (q.n <= 0) return T.tab === 'dollars' ? 'Enter an amount of at least ' + usd(q.p * U * 1.02) + '.' : 'Enter at least 1 share.';
+  if (T.tab === 'limit' && !(q.p >= 0.01 && q.p <= 0.99)) return 'Limit price must be between 1¢ and 99¢.';
+  if (buy && q.cost + q.fee > S.bal + 1e-9) return 'Not enough USDC. You have ' + usd(S.bal) + '.';
+  if (!buy && q.n > held(m, T.side)) return 'You only hold ' + held(m, T.side) + ' ' + T.side.toUpperCase() + '.';
+  if (T.tab === 'limit' && T.postOnly && m.state === 'live') {
+    const crosses = buy ? (T.side === 'yes' ? q.yesEq >= bestAsk(m) : q.yesEq <= bestBid(m)) : q.p <= sellPx(m, T.side);
+    if (crosses) return 'This price would fill right away. Change the price, or untick "resting order only".';
+  }
+  return '';
+}
+function submit() {
+  const m = mk(S.mid); if (!m) return;
+  T.review = false;
+  const err = validate(m);
+  if (err) { T.err = err; return refresh(); }
+  T.err = '';
+  const q = quote(m), side = T.side, SIDE = side.toUpperCase();
+  const expireAt = T.tab === 'limit' ? (T.exp === 'm5' ? S.t + 300 : T.exp === 'close' ? m.closeAt : null) : null;
+  if (T.act === 'buy' && T.tab !== 'limit') {
+    if (m.state !== 'live') return;
+    const fee = feeOf(q.n, q.p), cost = q.n * q.p * U;
+    S.bal -= cost + fee;
+    const ps = P(m.id); if (side === 'yes') { ps.yes += q.n; ps.cy += cost + fee; } else { ps.no += q.n; ps.cn += cost + fee; }
+    const mint = capRoomPairs(m) >= q.n;
+    if (mint) m.oi += q.n * U;
+    m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: q.p, n: q.n, kind: mint ? 'MINT' : 'TRANSFER', you: true });
+    m.volSol += cost;
+    m.mid = r2(clamp(m.mid + (side === 'yes' ? 0.01 : -0.01), 0.02, 0.98));
+    toast('Bought <span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + '</span> at ' + cents(q.p) + ' for ' + usd(cost + fee) + '. If ' + SIDE + ' wins you get <span class="mono">' + usd(q.n * U) + '</span>.', side === 'yes' ? 'yes' : 'no');
+  } else if (T.tab !== 'limit') {
+    if (m.state !== 'live') return;
+    sellShares(m, side, q.n);
+  } else if (T.act === 'buy') {
+    const yp = q.yesEq;
+    if (m.state === 'live' && ((side === 'yes' && yp >= bestAsk(m)) || (side === 'no' && yp <= bestBid(m)))) {
+      const px = priceFor(m, side), fee = feeOf(q.n, px), cost = q.n * px * U;
+      S.bal -= cost + fee;
+      const ps = P(m.id); if (side === 'yes') { ps.yes += q.n; ps.cy += cost + fee; } else { ps.no += q.n; ps.cn += cost + fee; }
+      const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: 'filled' }); o.filled = q.n; o.note = 'filled right away at ' + cents(px);
+      m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: px, n: q.n, kind: capRoomPairs(m) >= q.n ? 'MINT' : 'TRANSFER', you: true });
+      toast('Your limit crossed the book, so it filled right away at <span class="mono">' + cents(px) + '</span>, better than your ' + cents(q.p) + '.', 'info');
+    } else {
+      S.bal -= q.cost;
+      const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: m.state === 'auction' ? 'queued' : 'open' });
+      o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '');
+      toast((m.state === 'auction' ? 'Queued for the auction: ' : 'Buy order resting on the book: ') + '<span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. ' + usd(q.cost) + ' held until it fills.', 'info');
+    }
+  } else {
+    if (q.p <= sellPx(m, side)) sellShares(m, side, q.n, 'Your price was at or below the best bid, so it sold right away at ' + cents(sellPx(m, side)) + '.');
+    else {
+      const ps = P(m.id), basis = side === 'yes' ? ps.cy / ps.yes : ps.cn / ps.no;
+      if (side === 'yes') { ps.yes -= q.n; ps.cy -= basis * q.n; } else { ps.no -= q.n; ps.cn -= basis * q.n; }
+      const o = addOrder({ mid: m.id, act: 'sell', side, price: q.p, shares: q.n, guard: null, status: 'open', basis });
+      o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '');
+      toast('Sell order resting on the book: <span class="mono">' + q.n + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. Your shares are held until it fills.', 'info');
+    }
+  }
+  refresh();
+}
+
+/* ---------- portfolio ---------- */
+function renderPort() {
+  if (!S.wallet) { $('#view').innerHTML = '<h1 class="px" style="font-size:26px">PORTFOLIO</h1><div class="empty">Connect a wallet to see your positions, orders and winnings.<div style="margin-top:14px"><button class="btn solid-tx" data-act="wallet">Connect wallet</button></div></div>'; return; }
+  let claimTot = 0, openVal = 0, pl = 0;
+  const claimRows = [], openRows = [], doneRows = [];
+  for (const id in S.pos) {
+    const m = mk(id), p = S.pos[id]; if (!m || p.yes + p.no === 0) continue;
+    const legs = (p.yes ? '<span class="c-yes">' + p.yes + ' YES</span>' : '') + (p.yes && p.no ? ' + ' : '') + (p.no ? '<span class="c-no">' + p.no + ' NO</span>' : '');
+    const cost = p.cy + p.cn;
+    const name = '<button class="mcell" data-act="open" data-id="' + id + '">' + ident(m, 28) + '<span style="display:flex;flex-direction:column;min-width:0"><span class="meta"><span class="tk">$' + m.tick + '</span>' + typeTag(m) + '</span><span class="q" style="font-size:13px">' + question(m) + '</span></span></button>';
+    if ((m.state === 'resolved' || m.state === 'void') && !p.claimed) {
+      const pay = payout(m, p); claimTot += pay; pl += pay - cost;
+      (pay > 0 ? claimRows : doneRows).push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right">' + (pay > 0 ? '<button class="btn solid-cur" data-act="claim" data-id="' + id + '">' + (m.state === 'void' ? 'Redeem ' : 'Claim ') + sol(pay) + '</button>' : '<span class="mono c-no">' + sgn(-cost) + '</span>') + '</span></div>');
+    } else if (p.claimed) {
+      doneRows.push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right mono mut">claimed ' + usd(p.claimedAmt) + '</span></div>');
+    } else {
+      const v = posValue(m, p); openVal += v; pl += v - cost;
+      openRows.push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + ' → ' + usd(v) + '</span><span class="h-m">' + badge(m) + '</span><span class="right mono ' + (v - cost >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(v - cost) + '</span></div>');
+    }
+  }
+  const hd = (a, b, c, d, e) => '<div class="prow hd"><span>' + a + '</span><span class="h-m">' + b + '</span><span class="h-m">' + c + '</span><span class="h-m">' + d + '</span><span style="text-align:right">' + e + '</span></div>';
+  const ords = S.orders;
+  let h = '<div class="feed-head" data-x="portfolio"><div><h1>PORTFOLIO</h1><p>Your shares, orders and winnings across every market.</p></div><div class="kpis"><div><b>' + usd(S.bal) + '</b><span>USDC free</span></div><div><b>' + usd(openVal) + '</b><span>in open positions</span></div><div><b class="c-cur">' + usd(claimTot) + '</b><span>to claim</span></div></div></div>';
+  if (claimRows.length) h += '<section style="display:flex;flex-direction:column;gap:10px"><div class="sec-h"><h2 class="h2 c-cur">READY TO CLAIM</h2><button class="btn solid-cur" data-act="claimall">Claim all · ' + usd(claimTot) + '</button></div><div class="ptable">' + hd('Market', 'Shares', 'Cost', 'Result', 'Payout') + claimRows.join('') + '</div></section>';
+  h += '<section style="display:flex;flex-direction:column;gap:10px"><h2 class="h2">OPEN POSITIONS</h2>' + (openRows.length ? '<div class="ptable">' + hd('Market', 'Shares', 'Cost → value', 'State', 'P&L') + openRows.join('') + '</div>' : '<div class="empty">No open positions.</div>') + '</section>';
+  h += '<section style="display:flex;flex-direction:column;gap:10px" data-x="orders"><h2 class="h2">ORDERS</h2>' + (ords.length ? '<div class="panel" style="padding:4px 16px"><div class="olist">' + ords.map(orderRow).join('') + '</div></div>' : '<div class="empty">No orders yet.</div>') + '</section>';
+  if (doneRows.length) h += '<section style="display:flex;flex-direction:column;gap:10px"><h2 class="h2">HISTORY</h2><div class="ptable">' + hd('Market', 'Shares', 'Cost', 'Result', 'Outcome') + doneRows.join('') + '</div></section>';
+  $('#view').innerHTML = h;
+}
+
+/* ---------- how it works ---------- */
+function renderHow() {
+  const capRows = [[0, 19.52], [50, 13.12], [70, 8.62], [80, 5.70], [90, 2.46], [95, 0.95]].map(([p, f]) => '<tr><td class="mono">' + p + '%</td><td class="mono">' + f.toFixed(2) + ' SOL</td><td class="mono">' + usd(f / 2 * SOLUSD) + '</td><td class="mono">' + Math.round(f / 2 * SOLUSD).toLocaleString('en-US') + '</td></tr>').join('');
+  $('#view').innerHTML = '<div class="feed-head"><div><h1>HOW BURBIT WORKS</h1><p>Burbit is a prediction market where every event is captured from a bonding-curve launchpad: pump.fun, Raydium LaunchLab, Pons and more. It isn\'t a launchpad or a curve. It reads existing launchpads and runs short YES/NO markets on what their tokens do next.</p></div></div>' +
+    '<div class="how">' +
+    '<section class="panel"><h2 class="h2">1 · THE LIFE OF A MARKET</h2><div class="flow"><span class="badge b-mut"><i></i>NEAR GRADUATION</span><span class="arr">→</span><span class="badge b-auc"><i></i>AUCTION 60S</span><span class="arr">→</span><span class="badge b-live"><i></i>LIVE</span><span class="arr">→</span><span class="badge b-mut"><i></i>HALTED</span><span class="arr">→</span><span class="badge b-cur"><i></i>SETTLED</span></div><p>A token on a launchpad gets close to graduating. Burbit opens a market on it. For 60 seconds orders are collected, then everyone who crosses fills at one price. Trading runs until the token graduates (instant halt) or until 5 minutes before the deadline. Then anyone can call settle, and winners redeem.</p></section>' +
+    '<section class="panel"><h2 class="h2">2 · SHARES AND PAIRS</h2><p>A winning share pays <span class="mono">$1</span>; a losing share pays nothing. One YES plus one NO always pays exactly $1, so shares only exist in pairs, each backed by $1 locked in the market\'s vault. A price is a probability: YES at <span class="mono">0.31</span> costs 31¢ and means a 31% chance.</p></section>' +
+    '<section class="panel"><h2 class="h2">3 · FOUR WAYS A TRADE SETTLES</h2><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Buyer</th><th>Seller</th><th>What happens</th><th>Pairs</th></tr></thead><tbody><tr><td>Buy YES</td><td>Buy NO</td><td><span class="tag" style="color:var(--cur);border-color:rgba(230,0,0,.35)">MINT</span> both lock USDC, a new pair is created</td><td class="mono">+1</td></tr><tr><td>Buy YES</td><td>Sell YES</td><td><span class="tag">TRANSFER</span> YES changes hands</td><td class="mono">0</td></tr><tr><td>Sell NO</td><td>Sell YES</td><td><span class="tag">MERGE</span> pair burned, $1 split</td><td class="mono">−1</td></tr><tr><td>Buy NO</td><td>Sell NO</td><td><span class="tag">TRANSFER</span> NO changes hands</td><td class="mono">0</td></tr></tbody></table></div><p>Mint is why a market needs no market maker to start. Merge is why you can always cash out.</p></section>' +
+    '<section class="panel"><h2 class="h2">4 · WHY IT CAN\'T BE PROFITABLY RIGGED</h2><p>Anyone could force a graduation YES by buying out the rest of the token\'s bonding curve on its launchpad. So each market\'s size is limited to half of that cost, which Burbit reads from the launchpad. The most an attacker can win is less than what forcing costs.</p><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Curve sold</th><th>Forcing cost (on the launchpad)</th><th>Max size (USDC)</th><th>Max (pairs)</th></tr></thead><tbody>' + capRows + '</tbody></table></div></section>' +
+    '<section class="panel"><h2 class="h2">5 · LIMIT ORDERS</h2><p>"Set your odds" places a limit order: buy or sell YES or NO at a price you choose, or better. If nobody matches it right away it waits on the order book until someone takes it, you cancel it, or the market halts (then it\'s returned in full). "Quick bet" and "Sell now" take the best price already on the book instead. Burbit never trades against you; every trade is between two users.</p></section>' +
+    '<section class="panel"><h2 class="h2">6 · WHAT BURBIT NEVER DOES</h2><p>It never creates, lists or trades tokens on a launchpad. It never takes a side or puts in its own capital; it earns a taker fee of <span class="mono">0.07 × p × (1 − p)</span> of the payout, at most 1.75%, with 20% rebated to makers. It needs no permission from any launchpad: it reads public accounts. If an account can\'t be parsed, the market voids and everyone gets their collateral back.</p></section>' +
+    '</div><p class="fnt" style="font-size:12px">This is a clickable prototype with simulated data. Token names, prices and wallets are made up. Numbers for caps and forcing cost follow the Burbit v3 spec.</p>';
+}
+
+/* ---------- demo panel ---------- */
+function renderDemo() {
+  const m = S.view === 'market' ? mk(S.mid) : null;
+  let h = '<div style="display:flex;justify-content:space-between;align-items:center"><h2 class="h2 c-cur">DEMO CONTROLS</h2><span class="fnt" style="font-size:11px">not part of the product</span></div>';
+  h += '<div class="grp"><span class="lbl">Clock</span><div class="seg" role="group" aria-label="Simulation speed">' + [[0, 'Pause'], [1, '1×'], [4, '4×'], [12, '12×']].map(([v, l]) => '<button data-act="speed" data-v="' + v + '" aria-pressed="' + (S.speed === v) + '">' + l + '</button>').join('') + '</div></div>';
+  if (m) {
+    const live = m.state === 'live', a = m.state === 'auction';
+    h += '<div class="grp"><span class="lbl">This market · $' + m.tick + '</span><div class="grid2">' +
+      '<button class="btn" data-act="dx" data-v="uncross"' + (a ? '' : ' disabled') + '>End auction now</button>' +
+      '<button class="btn" data-act="dx" data-v="pump"' + (live || a ? '' : ' disabled') + '>Token surges on launchpad</button>' +
+      '<button class="btn" data-act="dx" data-v="dump"' + (live || a ? '' : ' disabled') + '>Token sells off on launchpad</button>' +
+      '<button class="btn" data-act="dx" data-v="grad"' + (m.type === 'grad' && (live || a || m.state === 'halted') && m.outcome == null ? '' : ' disabled') + '>Graduate now</button>' +
+      '<button class="btn" data-act="dx" data-v="fill"' + (live ? '' : ' disabled') + '>Fill to max size</button>' +
+      '<button class="btn" data-act="dx" data-v="close"' + (live ? '' : ' disabled') + '>Jump to close</button>' +
+      '<button class="btn" data-act="dx" data-v="deadline"' + (m.state === 'halted' || live ? '' : ' disabled') + '>Pass deadline</button>' +
+      '<button class="btn" data-act="dx" data-v="void"' + (m.outcome == null ? '' : ' disabled') + '>Launchpad layout changes</button>' +
+      (m.type !== 'grad' ? '<button class="btn" data-act="dx" data-v="rug"' + (m.outcome == null ? '' : ' disabled') + '>' + (m.type === 'bonded' ? 'Dev pulls bag' : 'Dev dumps bag') + '</button>' : '') +
+      '</div></div>';
+  } else h += '<p class="fnt" style="font-size:12px">Open a market to get controls for it (end auction, move the curve, graduate, void…).</p>';
+  h += '<div class="grp"><span class="lbl">Suggested walkthrough</span><ol>' +
+    '<li>Turn on <b>Explain</b> (top bar) and click any outlined part.</li>' +
+    '<li><button data-act="open" data-id="krill">$KRILL</button> is in its opening auction. Place a YES order, then <i>End auction now</i>.</li>' +
+    '<li><button data-act="open" data-id="gorp">$GORP</button>: Quick bet, then Sell (Buy/Sell tabs), then Set your odds for a limit order. Switch the order book between Trade Yes and Trade No.</li>' +
+    '<li>On $GORP press <i>Graduate now</i>: it halts, refunds orders, settles YES. Claim in Portfolio.</li>' +
+    '<li><button data-act="open" data-id="brrr">$BRRR</button> is full (max size). <button data-act="open" data-id="plank">$PLANK</button> lets you merge a YES+NO pair.</li>' +
+    '<li><button data-act="open" data-id="lumen">$LUMEN</button> is a bonded rug market. Buy protection, then <i>Dev pulls bag</i>.</li>' +
+    '<li><button data-act="open" data-id="vanta">$VANTA</button> was voided: redeem at 0.005 per share.</li></ol></div>';
+  h += '<div class="grp"><div class="grid2"><button class="btn" data-act="spawn">New launch hits 70%</button><button class="btn" data-act="reset">Reset demo</button></div></div>';
+  $('#demo').innerHTML = h;
+}
+function demoAction(v) {
+  let m = mk(S.mid); if (!m) return;
+  if (m.follow && (v === 'pump' || v === 'dump' || v === 'grad')) m = mk(m.follow);
+  if (v === 'uncross' && m.state === 'auction') { m.auctionEnd = S.t; uncross(m); }
+  if (v === 'pump') { m.pct = clamp(m.pct + 8, 0, m.type === 'grad' ? 99.6 : 99.5); m.mid = r2(clamp(fair(m), 0.02, 0.98)); toast('$' + m.tick + ' surged on ' + m.launchpad + ': buyers poured in.', 'cur'); }
+  if (v === 'dump') { m.pct = clamp(m.pct - 10, 40, 100); m.mid = r2(clamp(fair(m), 0.02, 0.98)); toast('Insiders sold: $' + m.tick + ' dropped on ' + m.launchpad + '.', 'no'); }
+  if (v === 'grad') { if (m.state === 'auction') m.state = 'live'; graduate(m); }
+  if (v === 'fill') { m.oi = cap(m); m.trades.unshift({ t: S.t, side: 'BUY YES', p: bestAsk(m), n: 200, kind: 'MINT' }); toast('$' + m.tick + ' reached its maximum market size of <span class="mono">' + usd(cap(m)) + '</span>. No new pairs can be created.', 'cur'); }
+  if (v === 'close') { m.closeAt = S.t; halt(m, 'close'); toast('Trading closed on $' + m.tick + '. It still settles YES if the token graduates before the deadline.', 'mut'); }
+  if (v === 'deadline') { if (m.state === 'live') halt(m, 'close'); m.deadlineAt = S.t; resolve(m, m.type === 'grad' ? 'no' : 'no'); }
+  if (v === 'void') voidM(m);
+  if (v === 'rug') { if (m.state === 'live' || m.state === 'auction') halt(m, 'rug'); resolve(m, 'yes'); toast(m.type === 'bonded' ? 'The dev withdrew their bag from escrow. That is the rug: YES holders are paid from the ' + usd(m.bond) + ' bond.' : 'The dev wallet sold over half its bag. Settled YES from its token balance.', 'no'); }
+  refresh(); renderDemo();
+}
+
+/* ---------- explain ---------- */
+const EX = {
+  category: ['Launchpad categories', 'Burbit\'s categories are launchpads, the way other prediction markets use Politics or Sports. Burbit captures launch events from each launchpad and files every market under the launchpad its token launched on.'],
+  event: ['One token, several markets', 'A token can have more than one question, grouped into one event. Each row trades separately; they all share the same token and curve.'],
+  featured: ['Top launches', 'The biggest live markets right now, ranked by volume, rotating every few seconds like a prediction-market front page. Inside a launchpad category it shows the top launches on that launchpad only.'],
+  movers: ['Biggest movers', 'Live markets whose odds have moved the most since their opening auction, usually because the token is moving fast on its launchpad.'],
+  source: ['Event source', 'The launchpad this event comes from. Burbit detects it automatically, then uses that launchpad\'s own data to validate the event: to open the market, check every trade and settle the result. Only the launchpad matters here, not which chain it runs on.'],
+  feed: ['Markets', 'Burbit is a prediction market where every event is captured from a bonding-curve launchpad: will it graduate, how fast, will the dev dump. A market opens when a token gets close to graduating. Burbit doesn\'t launch or trade tokens; it reads each launchpad\'s data.'],
+  odds: ['Chance and prices', 'A Yes share pays $1 if the answer is yes, so its price is the market\'s probability: 0.31 means 31%. The buttons show what you\'d pay now: Yes at the best ask, No at 1 minus the best bid. Dashed buttons mean the auction hasn\'t cleared yet, so the price is only indicative.'],
+  state: ['Market state', 'Auction → Live → Halted → Settled (or Void). Each change is triggered by the token\'s own behaviour on its launchpad, or by the clock. FULL means the market hit its maximum size, so no new pairs can be created right now.'],
+  countdown: ['Close and deadline', 'Trading stops 5 minutes before the deadline to prevent last-second games. After close, the market can still settle YES if the token graduates before the deadline.'],
+  oi: ['Market size and its max', 'Market size is the USDC locked in a market ($1 per YES+NO pair). The max is a safety limit: Burbit keeps each market smaller than what it would cost someone to force the result on the launchpad, so rigging it loses money. (Engineers call this an open-interest cap.)'],
+  auction: ['Opening auction', 'For the first 60 seconds orders are collected, not matched. Then everyone who crosses fills at one clearing price. Arriving first, or being a bot, gives no edge.'],
+  book: ['Order book', 'Every open limit order, split into asks (people selling) and bids (people buying). Switch between Trade Yes and Trade No to see the same book from either side: a YES bid at 0.40 is the same as a NO ask at 0.60, because YES + NO always equals 1. ' + 'Real limit orders from users, all priced in YES. "Buy NO at 0.70" appears here as an ask at 0.30, so YES and NO share one book and one price. Burbit never puts in its own money. Orders marked YOU are yours.'],
+  trades: ['Trade kinds', 'MINT: a YES buyer and a NO buyer lock $1 together and create a new pair. TRANSFER: existing shares change hands. MERGE: a YES seller and a NO seller burn a pair and split its $1. AUCTION: filled at the opening cross.'],
+  chart: ['Chance over time', 'How the YES chance has moved since the market opened. The shaded band is the opening auction; grey is after trading closed.'],
+  quick: ['Quick bet', 'Takes the best price on the book right now (immediate-or-cancel with a slippage limit). Takers pay 0.07 × p × (1 − p) of the payout per share: at most 1.75% at 50/50, nearly nothing near certainty.'],
+  limit: ['Set your odds', 'A limit order at your price. It rests on the book until someone takes it, you cancel it, its guard voids it, or the market halts. Makers pay no fee and get 20% of the taker\'s fee as a rebate.'],
+  pos: ['Your position', 'Shares you hold and what they\'re worth at the current best price. Cash out any time before close by selling on the book, or merge YES+NO pairs back into $1 each.'],
+  cashout: ['Cash out', 'Sells your shares to the best bid right now. Either another trader buys them (transfer), or a NO seller and you burn a pair together (merge).'],
+  merge: ['Merge', 'One YES plus one NO is always worth exactly $1, so you can turn pairs back into USDC at any time, even after trading halts. It\'s free.'],
+  orders: ['Your orders', 'Every order and what happened to it: open, partial, filled, cancelled, or refunded when the market halted.'],
+  rules: ['How it settles', 'The Burbit program reads the launchpad account directly: YES the moment the token graduates, NO once the deadline passes without it. No oracle, no vote. The token\'s creator is barred from trading its markets.'],
+  bonded: ['Creator-written rug market', 'The creator locks their bag in Burbit\'s escrow and posts a bond. Buyers of YES are buying protection. If the creator takes the bag back before expiry, that is the rug and YES is paid from the bond. Coverage = bond ÷ what the bag is worth now.'],
+  openrug: ['Open rug market', 'Anyone can take either side; it settles from the creator\'s token balance. The creator could decide it from a second wallet, so its maximum size stays small (0.5 USDC) and the app labels it.'],
+  wallet: ['Wallet and balance', 'USDC moves from your wallet into the market\'s vault in the same transaction as your trade. Every share is backed 1:1 by USDC in that vault, and Burbit can\'t touch it.'],
+  void: ['Void', 'If a launchpad changes its account layout and Burbit can\'t read it, the market fails safe: every YES and NO share redeems for 50¢, so each pair gets its full $1 back.'],
+  portfolio: ['Portfolio', 'Open positions, all your orders and their outcomes, and winnings to claim once markets settle.']
+};
+function showX(key) {
+  const e = EX[key]; if (!e) return;
+  const d = $('#xd');
+  d.innerHTML = '<button class="close" data-act="xclose" aria-label="Close">✕</button><h3>' + e[0].toUpperCase() + '</h3><p>' + e[1] + '</p><span class="hint">Explain mode is on. Click another outlined part, or turn it off in the top bar to use the app normally.</span>';
+  d.hidden = false;
+}
+
+/* ---------- navigation & refresh ---------- */
+function go(view, id, side) {
+  S.view = view; S.mid = id || null; T.err = '';
+  if (side) { T.side = side; T.tab = 'quick'; }
+  ['feed', 'port', 'how'].forEach((v) => { const b = $('#nav-' + v); if (b) b.setAttribute('aria-current', (view === v || (view === 'market' && v === 'feed')) ? 'page' : 'false'); });
+  if (view !== 'market') { $('#mobbar').hidden = true; document.body.classList.remove('has-mobbar'); }
+  if (view === 'feed') renderFeed();
+  else if (view === 'market') buildMarket();
+  else if (view === 'port') renderPort();
+  else if (view === 'how') renderHow();
+  if (S.demo) renderDemo();
+  window.scrollTo(0, 0);
+}
+function refresh() {
+  updateTopDynamic();
+  if (S.view === 'feed') { const y = window.scrollY; renderFeed(); window.scrollTo(0, y); }
+  else if (S.view === 'market') updateMarket(false);
+  else if (S.view === 'port') renderPort();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', (e) => {
+  if (S.explain) {
+    const x = e.target.closest('[data-x]');
+    const safe = e.target.closest('#top .xbtn, #xd, #demo, #demoBtn');
+    if (x && !safe) { e.preventDefault(); e.stopPropagation(); showX(x.dataset.x); return; }
+  }
+}, true);
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-act]'); if (!a || a.disabled) return;
+  const act = a.dataset.act, v = a.dataset.v, id = a.dataset.id;
+  switch (act) {
+    case 'nav': go(v); break;
+    case 'open': go('market', id, v === 'yes' || v === 'no' ? v : null); break;
+    case 'filter': S.filter = v; renderFeed(); break;
+    case 'cat': S.cat = v; S.heroIdx = 0; go('feed'); break;
+    case 'hero': S.heroIdx = (S.heroIdx || 0) + Number(v) + 5; S.heroIdx %= Math.max(1, document.querySelectorAll('.dots button').length || 5); S.heroHold = S.t + 20; renderFeed(); break;
+    case 'herogo': S.heroIdx = Number(v); S.heroHold = S.t + 20; renderFeed(); break;
+    case 'tact': { const m0 = mk(S.mid); T.act = v; T.err = ''; T.review = false; if (v === 'sell' && m0 && !held(m0, T.side) && held(m0, T.side === 'yes' ? 'no' : 'yes')) T.side = T.side === 'yes' ? 'no' : 'yes'; if (v === 'sell' && T.tab === 'dollars') T.tab = 'shares'; T.priceC = defaultPriceC(m0, T.act, T.side); T.shares = v === 'sell' && m0 ? String(held(m0, T.side) || '') : '100'; updateMarket(true); break; }
+    case 'bookside': S.bookSide = v; updateMarket(false); break;
+    case 'spreset': T.shares = v; updateMarket(true); break;
+    case 'side': T.side = v; T.err = ''; T.review = false; T.priceC = defaultPriceC(mk(S.mid), T.act, v); if (T.act === 'sell' && mk(S.mid)) T.shares = String(held(mk(S.mid), v) || ''); updateMarket(true); break;
+    case 'mside': T.side = v; T.act = 'buy'; T.tab = 'dollars'; T.review = false; updateMarket(true); $('#r-ticket').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'review': { const m0 = mk(S.mid); const err = m0 ? validate(m0) : ''; T.err = err; T.review = !err; updateMarket(false); break; }
+    case 'editorder': T.review = false; updateMarket(false); break;
+    case 'preset': T.amount = v; const ai = $('#amt'); if (ai) ai.value = v; updateMarket(false); break;
+    case 'submit': submit(); break;
+    case 'sell': sell(v); break;
+    case 'merge': merge(); break;
+    case 'cancel': cancel(Number(id)); break;
+    case 'claim': claim(id); break;
+    case 'claimall': for (const k in S.pos) { const m = mk(k); if (m && (m.state === 'resolved' || m.state === 'void') && payout(m, S.pos[k]) > 0) claim(k, true); } refresh(); break;
+    case 'wallet': walletModal(); break;
+    case 'explain': S.explain = !S.explain; document.body.classList.toggle('explain', S.explain); renderTop(); if (!S.explain) $('#xd').hidden = true; else showX('feed'); break;
+    case 'xclose': $('#xd').hidden = true; break;
+    case 'demo': S.demo = !S.demo; $('#demo').hidden = !S.demo; a.setAttribute('aria-expanded', S.demo); if (S.demo) renderDemo(); break;
+    case 'speed': setSpeed(Number(v)); renderDemo(); renderTop(); break;
+    case 'dx': demoAction(v); break;
+    case 'spawn': spawn(); refresh(); break;
+    case 'reset': init(); go('feed'); toast('Demo reset.', 'mut'); break;
+    case 'pickwallet': S.wallet = v; $('#modal').hidden = true; renderTop(); go(S.view, S.mid); toast('Connected ' + v + '. Demo wallet with $500 USDC on devnet; nothing real is touched.', 'yes'); break;
+    case 'disconnect': S.wallet = null; $('#modal').hidden = true; renderTop(); go(S.view, S.mid); break;
+    case 'mclose': $('#modal').hidden = true; break;
+  }
+});
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.id === 'q') { S.q = t.value; if (S.view !== 'feed') go('feed'); else renderFeed(); const q = $('#q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); return; }
+  if (t.id === 'amt') T.amount = t.value;
+  else if (t.id === 'lpc') T.priceC = t.value.replace(/[^0-9.]/g, '');
+  else if (t.id === 'ls') T.shares = t.value;
+  else if (t.id === 'gmin') T.gmin = t.value;
+  else if (t.id === 'gmax') T.gmax = t.value;
+  else return;
+  T.err = ''; T.review = false;
+  const m = mk(S.mid); if (m) renderTicketSum(m);
+});
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'otype') { T.tab = e.target.value; T.err = ''; T.review = false; T.priceC = defaultPriceC(mk(S.mid), T.act, T.side); updateMarket(true); }
+  if (e.target.id === 'exp') { T.exp = e.target.value; renderTicketSum(mk(S.mid)); }
+  if (e.target.id === 'po') { T.postOnly = e.target.checked; T.err = ''; renderTicketSum(mk(S.mid)); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { $('#xd').hidden = true; $('#modal').hidden = true; if (S.demo) { S.demo = false; $('#demo').hidden = true; $('#demoBtn').setAttribute('aria-expanded', 'false'); } }
+  if (e.key === 'Enter' && e.target.closest && e.target.closest('#r-tform') && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') submit();
+});
+
+function sellShares(m, side, n, lead) {
+  const p = S.pos[m.id]; if (!p || m.state !== 'live') return;
+  n = Math.min(n, side === 'yes' ? p.yes : p.no); if (!n) return;
+  const px = sellPx(m, side), fee = feeOf(n, px), got = n * px * U - fee;
+  S.bal += got;
+  const merge = Math.random() < 0.5 && m.oi >= n * U;
+  if (merge) m.oi -= n * U;
+  if (side === 'yes') { p.cy -= p.cy / p.yes * n; p.yes -= n; } else { p.cn -= p.cn / p.no * n; p.no -= n; }
+  m.volSol += n * px * U;
+  m.trades.unshift({ t: S.t, side: 'SELL ' + side.toUpperCase(), p: px, n, kind: merge ? 'MERGE' : 'TRANSFER', you: true });
+  toast((lead ? lead + ' ' : '') + 'Sold <span class="mono">' + n + ' ' + side.toUpperCase() + '</span> at ' + px.toFixed(2) + ' for <span class="mono">' + usd(got) + '</span> (' + (merge ? 'merged with a ' + (side === 'yes' ? 'NO' : 'YES') + ' seller: the pair was burned' : 'another trader bought them') + ').', 'info');
+}
+function sell(side) { const m = mk(S.mid); if (!m) return; sellShares(m, side, Infinity); refresh(); }
+function merge() {
+  const m = mk(S.mid), p = S.pos[m.id]; if (!m || !p) return;
+  const n = Math.min(p.yes, p.no); if (!n) return;
+  const fy = p.cy / p.yes, fn = p.cn / p.no;
+  p.yes -= n; p.no -= n; p.cy -= fy * n; p.cn -= fn * n;
+  S.bal += n * U; m.oi = Math.max(0, m.oi - n * U);
+  m.trades.unshift({ t: S.t, side: 'MERGE', p: 1, n, kind: 'MERGE', you: true });
+  toast('Merged <span class="mono">' + n + '</span> YES+NO pairs back into <span class="mono">' + usd((n * U)) + '</span>. Free, no fee.', 'info');
+  refresh();
+}
+function cancel(id) {
+  const o = S.orders.find((x) => x.id === id); if (!o) return;
+  const back = release(o); o.status = 'cancelled';
+  toast('Order cancelled: <span class="mono">' + back + '</span>.', 'mut');
+  refresh();
+}
+function claim(id, quiet) {
+  const m = mk(id), p = S.pos[id]; if (!m || !p) return;
+  const pay = payout(m, p); if (pay <= 0) return;
+  S.bal += pay; p.claimed = true; p.claimedAmt = pay;
+  if (!quiet) toast('Claimed <span class="mono">' + usd(pay) + '</span> from $' + m.tick + '.', 'yes');
+  if (!quiet) refresh();
+}
+function walletModal() {
+  const md = $('#modal');
+  const w = (name, c1, c2) => '<button class="wopt" data-act="pickwallet" data-v="' + name + '"><i style="background:linear-gradient(135deg,' + c1 + ' 50%,' + c2 + ' 50%)"></i>' + name + '<span class="fnt" style="margin-left:auto;font-weight:400;font-size:12px">demo</span></button>';
+  md.innerHTML = '<div class="box" role="dialog" aria-modal="true" aria-label="Connect a wallet">' + (S.wallet
+    ? '<h2 class="h2">WALLET</h2><p class="mono">' + S.wallet + '</p><p class="mut" style="font-size:13px">' + usd(S.bal) + ' free</p><button class="btn" data-act="disconnect">Disconnect</button><button class="btn ghost" data-act="mclose">Close</button>'
+    : '<h2 class="h2">CONNECT A WALLET</h2><p class="mut" style="font-size:13px">Prototype only: pick one to get a demo wallet with $500 USDC. No real wallet is opened.</p>' + w('Phantom', '#AB9FF2', '#8A7BE0') + w('Solflare', '#FFC857', '#F28B30') + w('Backpack', '#E33E3F', '#B52A2B') + '<button class="btn ghost" data-act="mclose">Cancel</button>') + '</div>';
+  md.hidden = false;
+  md.onclick = (e) => { if (e.target === md) md.hidden = true; };
+}
+// wallet names get a short address when connected
+const _pick = walletModal;
+
+init();
+renderTop();
+go('feed');
+setSpeed(1);
+})();
+</script>
