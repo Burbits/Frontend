@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Burbit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <title>Burbit Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,6 +46,7 @@ h1,h2,h3,p{margin:0}
 .navb{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:0;background:transparent;color:var(--mut)}
 .navb:hover{color:var(--tx);background:var(--s1)}
 .navb[aria-current="page"]{background:var(--s2);color:var(--tx)}
+.navb .nl{display:none}
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;height:56px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 24px}
 .wordmark{font-family:var(--px);font-size:18px;letter-spacing:.05em}
@@ -205,7 +214,10 @@ h1,h2,h3,p{margin:0}
 .kcheck input{width:18px;height:18px;margin:0;accent-color:var(--tx)}
 .ksum dt{display:flex;flex-direction:column;color:var(--tx);font-weight:500}
 .ksum dt small{font-size:11px;color:var(--mut);font-weight:400}
-.ksum dd.big{font-size:15px}
+.ksum div.fee dt,.ksum div.fee dd{color:var(--mut);font-weight:400}
+.ksum div.big{padding-top:8px;border-top:1px solid var(--line)}
+.ksum div.big dt,.ksum div.big dd{font-weight:600;font-size:15px}
+.ksum div.pay dd{font-size:22px;font-weight:600}
 .ksum dd.pay{font-size:24px;font-weight:600}
 .review{display:flex;flex-direction:column;gap:12px;padding-top:4px}
 .tk-act{display:flex;border-bottom:1px solid var(--line)}
@@ -396,7 +408,11 @@ body.explain [data-x]:hover{outline:2px solid var(--cur);background-color:rgba(2
   .prow.hd{display:none}
 }
 @media (max-width:700px){
-  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;width:auto;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--line);background:var(--bg);z-index:40;padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
+  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;width:auto;flex-direction:row;justify-content:space-around;align-items:stretch;gap:0;border-right:0;border-top:1px solid var(--line);background:rgba(255,255,255,.97);backdrop-filter:blur(8px);z-index:40;padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px))}
+  .rail .navb{flex:1;width:auto;height:54px;flex-direction:column;gap:3px;border-radius:0;background:transparent;position:relative}
+  .rail .navb .nl{display:block;font-size:11px;font-weight:600}
+  .rail .navb[aria-current="page"]{background:transparent;color:var(--cur)}
+  .rail .navb[aria-current="page"]::before{content:"";position:absolute;top:-4px;left:28%;right:28%;height:2px;background:var(--cur)}
   .rail .logo{display:none}
   .top{padding:0 16px;gap:10px}
   .search,.net,.clock{display:none}
@@ -407,11 +423,11 @@ body.explain [data-x]:hover{outline:2px solid var(--cur);background-color:rgba(2
   .mrow2{grid-template-columns:1fr}
   .kpis{gap:16px}
   #toasts{left:16px;right:16px;bottom:140px;max-width:none}
-  #demoBtn{right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  #demoBtn{right:16px;bottom:calc(80px + env(safe-area-inset-bottom,0px))}
   #demo{right:16px;left:16px;width:auto;bottom:calc(124px + env(safe-area-inset-bottom,0px))}
-  .mobbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;position:fixed;left:0;right:0;bottom:calc(57px + env(safe-area-inset-bottom,0px));padding:10px 16px;background:var(--s0);border-top:1px solid var(--line);z-index:30}
+  .mobbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;position:fixed;left:0;right:0;bottom:calc(63px + env(safe-area-inset-bottom,0px));padding:10px 16px;background:var(--s0);border-top:1px solid var(--line);z-index:30}
   .mobbar button{height:48px}
-  body.has-mobbar #demoBtn{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+  body.has-mobbar #demoBtn{bottom:calc(144px + env(safe-area-inset-bottom,0px))}
 }
 </style>
 </head>
@@ -422,9 +438,9 @@ body.explain [data-x]:hover{outline:2px solid var(--cur);background-color:rgba(2
     <button class="logo" data-act="nav" data-v="feed" aria-label="Burbit home">
       <svg width="36" height="36" viewBox="0 0 1080 1080" aria-hidden="true"><rect width="1080" height="1080" fill="#F70000"/><path fill="#FFFFFF" fill-rule="evenodd" d="M324 162H742V176H756V189H769V203H783V216H796V458H783V472H769V486H756V499H742V513H729V526H715V540H648V621H796V635H810V877H796V891H783V904H769V918H310V904H270V216H324ZM472 243H540V324H594V525H472ZM500 688H608V836H540V769H500V756H486V702H500Z"/></svg>
     </button>
-    <button class="navb" data-act="nav" data-v="feed" aria-label="Markets" id="nav-feed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
-    <button class="navb" data-act="nav" data-v="port" aria-label="Portfolio" id="nav-port"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V4h8v3"/></svg></button>
-    <button class="navb" data-act="nav" data-v="how" aria-label="How Burbit works" id="nav-how"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></button>
+    <button class="navb" data-act="nav" data-v="feed" aria-label="Markets" id="nav-feed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="nl">Markets</span></button>
+    <button class="navb" data-act="nav" data-v="port" aria-label="Portfolio" id="nav-port"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V4h8v3"/></svg><span class="nl">Portfolio</span></button>
+    <button class="navb" data-act="nav" data-v="how" aria-label="How Burbit works" id="nav-how"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg><span class="nl">How it works</span></button>
   </nav>
   <div class="main">
     <header class="top" id="top"></header>
@@ -457,7 +473,11 @@ const sgn = (v) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toFixed(2);
 const FORCE = [[0, 19.52], [30, 16.28], [50, 13.12], [70, 8.62], [80, 5.70], [90, 2.46], [95, 0.95], [100, 0]];
 function forcing(p) { p = clamp(p, 0, 100); for (let i = 1; i < FORCE.length; i++) { const [a, x] = FORCE[i - 1], [b, y] = FORCE[i]; if (p <= b) return x + (y - x) * (p - a) / (b - a); } return 0; }
 function raised(p) { const s = clamp(p, 0, 100) / 100 * 793.1; return 30 * s / (1073 - s); }
-const feeOf = (n, p) => n * U * 0.07 * p * (1 - p);
+// Fees follow docs/09-FEES-AND-ECONOMICS.md. Everyone is tier 0 at launch.
+const FEE = { taker: 0.02, maker: 0, makerSteady: 0.01, auction: 0.01, buffer: 0.02, tier: 0 };
+const feeOf = (n, p) => n * p * U * FEE.taker;           // taker fee on your own fill value
+const makerFeeOf = (n, p) => n * p * U * FEE.maker;      // waived at launch (normally 1%)
+const auctionFeeOf = (n, p) => n * p * U * FEE.auction;  // half the taker rate, both sides
 function hash(str) { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
 const rnd = (a, b) => a + Math.random() * (b - a);
 
@@ -561,12 +581,12 @@ function init() {
   };
   addOrder({ mid: 'gorp', side: 'yes', price: 0.26, shares: 100, guard: null, status: 'open' });
   addOrder({ mid: 'krill', side: 'yes', price: 0.07, shares: 150, guard: null, status: 'queued' });
-  S.bal = 500 - 0.26 * 100 * U - 0.07 * 150 * U;
+  S.bal = 500 - (0.26 * 100 * U + 0.07 * 150 * U) * (1 + FEE.buffer);
 }
 const isBid = (o) => (o.act !== 'sell') === (o.side === 'yes');
 function addOrder(o) {
   const ord = Object.assign({ id: S.oid++, act: 'buy', filled: 0, created: S.t, note: '', basis: 0 }, o);
-  ord.escrow = ord.act === 'sell' ? 0 : ord.price * ord.shares * U;
+  ord.escrow = ord.act === 'sell' ? 0 : ord.price * ord.shares * U * (1 + FEE.buffer); // buys lock cost x 1.02
   S.orders.unshift(ord);
   return ord;
 }
@@ -588,7 +608,7 @@ function toast(msg, kind = 'info', act) {
 function release(o) {
   const rem = o.shares - o.filled;
   if (o.act === 'sell') { const p = P(o.mid); if (o.side === 'yes') { p.yes += rem; p.cy += rem * o.basis; } else { p.no += rem; p.cn += rem * o.basis; } return rem + ' ' + o.side.toUpperCase() + ' back in your position'; }
-  const v = rem * o.price * U; S.bal += v; return usd(v) + ' refunded';
+  const v = rem * o.price * U * (1 + FEE.buffer); S.bal += v; return usd(v) + ' refunded';
 }
 function refundOrders(m, reason) {
   const back = [];
@@ -608,17 +628,17 @@ function uncross(m) {
     if (o.act === 'sell') { o.status = 'open'; continue; }
     if (o.guard && (m.pct < o.guard[0] || m.pct > o.guard[1])) { voidByGuard(o, m); continue; }
     const crosses = o.side === 'yes' ? o.price >= p : o.price >= r2(1 - p);
-    if (!crosses) { o.status = 'open'; if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + p.toFixed(2) + '</span>. Your order didn\'t cross, so it now rests on the book.', 'info'); continue; }
+    if (!crosses) { o.status = 'open'; if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + cents(p) + '</span>. Your order didn\'t cross, so it now rests on the book.', 'info'); continue; }
     const px = o.side === 'yes' ? p : r2(1 - p);
     const n = Math.min(o.shares, capRoomPairs(m) || o.shares);
-    const cost = n * px * U, f = o.side === 'yes' ? feeOf(n, p) : 0;
+    const cost = n * px * U, f = auctionFeeOf(n, px);
     S.bal += o.escrow - cost - f;
     const ps = P(m.id); if (o.side === 'yes') { ps.yes += n; ps.cy += cost + f; } else { ps.no += n; ps.cn += cost + f; }
     o.filled = n; o.fillPx = px; o.status = n < o.shares ? 'partial' : 'filled';
-    if (n < o.shares) { S.bal += (o.shares - n) * o.price * U; o.status = 'filled'; o.note = 'rest refunded: market full'; }
+    if (n < o.shares) { o.status = 'filled'; o.note = 'rest refunded: market full'; }
     m.oi = Math.min(cap(m) + 0.001, m.oi + n * U);
     m.trades.unshift({ t: S.t, side: o.side === 'yes' ? 'BUY YES' : 'BUY NO', p: px, n, kind: 'AUCTION', you: true });
-    if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + p.toFixed(2) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + px.toFixed(2) + '</span>, below your limit of ' + o.price.toFixed(2) + '. The difference was refunded.', 'info', { act: 'open', id: m.id, label: 'View market' });
+    if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + p.toFixed(2) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + cents(px) + '</span> (your limit was ' + cents(o.price) + '). Auction fee 1%: ' + usd(f) + '. Everything unused was returned.', 'info', { act: 'open', id: m.id, label: 'View market' });
   }
 }
 function halt(m, why) {
@@ -712,22 +732,22 @@ function processOrders() {
     if (o.act === 'sell') {
       kind = Math.random() < 0.5 && m.oi >= n * U ? 'MERGE' : 'TRANSFER';
       if (kind === 'MERGE') m.oi -= n * U;
-      S.bal += n * o.price * U;
+      S.bal += n * o.price * U - makerFeeOf(n, o.price);
     } else {
       const mint = capRoomPairs(m) > 0;
       if (mint) n = Math.min(n, capRoomPairs(m));
       if (n <= 0) continue;
       kind = mint ? 'MINT' : 'TRANSFER';
       if (mint) m.oi += n * U;
-      if (o.side === 'yes') { ps.yes += n; ps.cy += n * o.price * U; } else { ps.no += n; ps.cn += n * o.price * U; }
+      const mf = makerFeeOf(n, o.price);
+      S.bal += n * o.price * U * FEE.buffer - mf; // unused 2% buffer back, minus the maker fee
+      if (o.side === 'yes') { ps.yes += n; ps.cy += n * o.price * U + mf; } else { ps.no += n; ps.cn += n * o.price * U + mf; }
     }
-    const rebate = 0.2 * feeOf(n, yp);
-    S.bal += rebate;
-    o.filled += n; o.rebate = (o.rebate || 0) + rebate;
+    o.filled += n; o.makerFee = (o.makerFee || 0) + makerFeeOf(n, o.price);
     o.status = o.filled >= o.shares ? 'filled' : 'partial';
     m.volSol += n * o.price * U;
     m.trades.unshift({ t: S.t, side: (o.act === 'sell' ? 'SELL ' : 'BUY ') + o.side.toUpperCase(), p: o.price, n, kind, you: true });
-    if (S.wallet) toast('Your ' + o.act + ' order on $' + m.tick + ' filled <span class="mono">' + o.filled + '/' + o.shares + ' ' + o.side.toUpperCase() + '</span> at ' + o.price.toFixed(2) + (o.act === 'sell' ? ' (' + (kind === 'MERGE' ? 'merged with a ' + (o.side === 'yes' ? 'NO' : 'YES') + ' seller' : 'bought by another trader') + ')' : '') + '. Maker rebate <span class="mono">+' + usd(rebate) + '</span>.', o.side === 'yes' ? 'yes' : 'no');
+    if (S.wallet) toast('Your ' + o.act + ' order on $' + m.tick + ' filled <span class="mono">' + o.filled + '/' + o.shares + ' ' + o.side.toUpperCase() + '</span> at ' + cents(o.price) + (o.act === 'sell' ? ' (' + (kind === 'MERGE' ? 'merged with a ' + (o.side === 'yes' ? 'NO' : 'YES') + ' seller' : 'bought by another trader') + ')' : '') + '. Maker fee <span class="mono">' + usd(makerFeeOf(n, o.price)) + '</span> (waived at launch).', o.side === 'yes' ? 'yes' : 'no');
   }
 }
 const POOL = [['FLUX', 'Flux', '#8FC1D9'], ['OKRA', 'Okra', '#9FCB7C'], ['DINGO', 'Dingo', '#D99B6C'], ['PEBL', 'Pebble', '#B8B8C8'], ['YAWN', 'Yawn', '#C9A8E0'], ['SNAX', 'Snax', '#E0B870'], ['GLOOP', 'Gloop', '#7FD1B9'], ['BIRB', 'Birb', '#E09C9C'], ['TUSK', 'Tusk', '#C8C0A0'], ['MEEP', 'Meep', '#A0C0E8']];
@@ -1127,7 +1147,7 @@ function orderRow(o) {
   const m = mk(o.mid);
   const st = { open: ['OPEN', 'b-live'], partial: ['PARTIAL', 'b-live'], queued: ['IN AUCTION', 'b-auc'], filled: ['FILLED', 'b-mut'], voided: ['VOIDED', 'b-cur'], refunded: ['REFUNDED', 'b-mut'], cancelled: ['CANCELLED', 'b-mut'], expired: ['EXPIRED', 'b-mut'] }[o.status];
   const canCancel = ['open', 'partial', 'queued'].includes(o.status);
-  return '<div class="orow"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="mono"><span class="mut">' + o.act.toUpperCase() + '</span> <span class="' + (o.side === 'yes' ? 'c-yes' : 'c-no') + '">' + o.side.toUpperCase() + '</span> ' + o.filled + '/' + o.shares + ' @ ' + cents(o.price) + (S.view === 'port' && m ? ' <span class="mut">$' + m.tick + '</span>' : '') + '</span><span class="mut" style="font-size:11px">' + (o.note ? o.note : 'limit order') + (o.rebate ? ' · rebate +' + usd(o.rebate) : '') + '</span></div><div style="display:flex;align-items:center;gap:8px"><span class="badge ' + st[1] + '"><i></i>' + st[0] + '</span>' + (canCancel ? '<button class="btn ghost" style="height:28px;padding:0 8px;font-size:12px" data-act="cancel" data-id="' + o.id + '">Cancel</button>' : '') + '</div></div>';
+  return '<div class="orow"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="mono"><span class="mut">' + o.act.toUpperCase() + '</span> <span class="' + (o.side === 'yes' ? 'c-yes' : 'c-no') + '">' + o.side.toUpperCase() + '</span> ' + o.filled + '/' + o.shares + ' @ ' + cents(o.price) + (S.view === 'port' && m ? ' <span class="mut">$' + m.tick + '</span>' : '') + '</span><span class="mut" style="font-size:11px">' + (o.note ? o.note : 'limit order') +  + '</span></div><div style="display:flex;align-items:center;gap:8px"><span class="badge ' + st[1] + '"><i></i>' + st[0] + '</span>' + (canCancel ? '<button class="btn ghost" style="height:28px;padding:0 8px;font-size:12px" data-act="cancel" data-id="' + o.id + '">Cancel</button>' : '') + '</div></div>';
 }
 function chartHTML(m) {
   const W = 900, H = 170;
@@ -1213,7 +1233,7 @@ function quote(m) {
   const buy = T.act === 'buy';
   if (T.tab === 'dollars') {
     const p = priceFor(m, T.side), amt = parseFloat(T.amount) || 0;
-    let n = Math.max(0, Math.floor(amt / (p * U + 0.07 * p * (1 - p) * U) + 1e-9)), clip = '';
+    let n = Math.max(0, Math.floor(amt / (p * U * (1 + FEE.taker)) + 1e-9)), clip = '';
     const room = capRoomPairs(m);
     if (room <= 0) { if (n > 35) { n = 35; clip = 'Only 35 shares are for sale at this price (market full).'; } }
     else if (n > room + 40) { n = room + 40; clip = 'Clipped by the market\'s maximum size.'; }
@@ -1226,39 +1246,57 @@ function quote(m) {
     return { p, n: buy ? n : Math.min(n, hv), cost: n * p * U, fee: feeOf(n, p), clip: !buy && n > hv ? 'You only hold ' + hv + ' ' + T.side.toUpperCase() + '.' : '' };
   }
   const lp = (parseFloat(T.priceC) || 0) / 100;
-  return { p: lp, n, cost: lp * n * U, fee: 0, yesEq: T.side === 'yes' ? lp : r2(1 - lp) };
+  const auc = m.state === 'auction';
+  return { p: lp, n, cost: lp * n * U, fee: auc ? auctionFeeOf(n, lp) : makerFeeOf(n, lp), yesEq: T.side === 'yes' ? lp : r2(1 - lp), hold: lp * n * U * (1 + FEE.buffer) };
+}
+function feeLines(m, q) {
+  // [label, amount, row style, sub-label] rows for the ticket and the review step
+  const buy = T.act === 'buy', side = T.side.toUpperCase(), auc = m.state === 'auction', lim = T.tab === 'limit';
+  const notional = q.n * q.p * U;
+  if (buy) {
+    const feeLabel = auc ? 'Auction fee · 1%' : lim ? 'Maker fee · waived at launch' : 'Fee · 2% taker';
+    const rows = [
+      ['Cost', usd(notional), '', q.n.toLocaleString('en-US') + ' ' + side + ' at ' + cents(q.p)],
+      [feeLabel, usd(q.fee), 'fee', lim && !auc ? 'normally 1%; 2% if your price fills right away' : ''],
+      ['Total you pay', usd(notional + q.fee), 'big', lim ? 'if it fills at your price' : ''],
+      ['Max payout', usd(q.n * U), 'pay', 'if ' + side + ' wins · settles by ' + clock(BASE + m.deadlineAt).slice(0, 5)]
+    ];
+    if (lim) rows.push(['Held now', usd(q.hold), '', 'cost + 2% buffer, unused part returned']);
+    return rows;
+  }
+  const feeLabel = lim ? 'Maker fee · waived at launch' : 'Fee · 2% taker';
+  return [
+    ['Proceeds', usd(notional), '', q.n.toLocaleString('en-US') + ' ' + side + ' at ' + cents(q.p)],
+    [feeLabel, (q.fee > 0 ? '−' : '') + usd(q.fee), 'fee', lim ? 'normally 1%; 2% if your price fills right away' : ''],
+    ['You receive', usd(Math.max(0, notional - q.fee)), 'pay', lim ? 'if it fills at your price' : '']
+  ];
 }
 function renderTicketSum(m) {
   const el = $('#r-tsum');
   if (m.state !== 'live' && m.state !== 'auction') { el.innerHTML = ''; el.style.display = 'none'; return; }
   el.style.display = 'flex';
   const q = quote(m), side = T.side.toUpperCase(), buy = T.act === 'buy', c = T.side === 'yes' ? 'var(--yes)' : 'var(--no)';
-  const payout = q.n * U, when = clock(BASE + m.deadlineAt).slice(0, 5);
-  let rows;
-  if (buy) rows = [['Cost', usd(q.cost + q.fee), 'big'], ['Max payout', usd(payout), 'pay', 'if ' + side + ' · settles by ' + when]];
-  else rows = [[T.tab === 'limit' ? 'You receive if filled' : 'You receive', usd(Math.max(0, q.n * q.p * U - q.fee)), 'pay', q.n + ' ' + side + ' at ' + cents(q.p)]];
-  const detail = buy
-    ? (T.tab === 'limit' ? (m.state === 'auction' ? 'Waits for the auction' : 'Rests on the book') + ' as a ' + (T.side === 'yes' ? 'bid' : 'ask') + ' at ' + cents(q.yesEq) + ' YES · no fee as maker' : q.n + ' shares at ' + cents(q.p) + ' · fee ' + usd(q.fee))
-    : (T.tab === 'limit' ? 'Rests on the book · your shares are held until it fills' : 'Sells now at the best bid · fee ' + usd(q.fee));
+  const rows = feeLines(m, q);
+  const dl = (rs) => '<dl class="sum ksum">' + rs.map((r) => '<div class="' + r[2] + '"><dt>' + r[0] + (r[3] ? '<small>' + r[3] + '</small>' : '') + '</dt><dd' + (r[2] === 'pay' ? ' style="color:' + c + '"' : '') + '>' + r[1] + '</dd></div>').join('') + '</dl>';
   if (T.review && S.wallet) {
     el.innerHTML = '<div class="review" role="dialog" aria-label="Review order"><span class="h2">REVIEW ' + (buy ? 'BUY' : 'SELL') + '</span>' +
       '<p style="font-size:15px;line-height:22px">' + (buy ? 'Buy' : 'Sell') + ' <b class="mono" style="color:' + c + '">' + q.n.toLocaleString('en-US') + ' ' + side + '</b> at <b class="mono">' + cents(q.p) + '</b>' + (T.tab === 'limit' ? ' or better' : '') + '</p>' +
-      '<dl class="sum">' + (buy ? '<div><dt>You pay</dt><dd>' + usd(q.cost + q.fee) + '</dd></div><div><dt>You get if ' + side + ' wins</dt><dd style="color:' + c + '">' + usd(payout) + '</dd></div><div><dt>Profit if ' + side + ' wins</dt><dd style="color:' + c + '">' + sgn(payout - q.cost - q.fee) + '</dd></div>' : '<div><dt>You receive</dt><dd>' + usd(Math.max(0, q.n * q.p * U - q.fee)) + '</dd></div>') +
-      (T.tab === 'limit' ? '<div><dt>Expiration</dt><dd>' + EXP[T.exp] + '</dd></div>' : '') + '</dl>' +
+      dl(rows) + (buy ? '<span class="kline">Profit if ' + side + ' wins: <b class="mono" style="color:' + c + '">' + sgn(q.n * U - q.n * q.p * U - q.fee) + '</b></span>' : '') +
+      (T.tab === 'limit' ? '<span class="kline">Expiration: ' + EXP[T.exp] + '</span>' : '') +
       '<div class="two"><button class="btn ghost" data-act="editorder">Edit</button><button class="cta" style="background:' + c + ';height:44px" data-act="submit">Confirm ' + (buy ? 'buy' : 'sell') + '</button></div></div>';
     return;
   }
-  el.innerHTML = '<dl class="sum ksum">' + rows.map((r) => '<div><dt>' + r[0] + (r[3] ? '<small>' + r[3] + '</small>' : '') + '</dt><dd class="' + r[2] + '"' + (r[2] === 'pay' ? ' style="color:' + c + '"' : '') + '>' + r[1] + '</dd></div>').join('') + '</dl>' +
-    '<span class="kline">' + detail + '</span>' +
+  el.innerHTML = dl(rows) +
     (q.clip ? '<span class="err" style="color:var(--cur)">' + q.clip + '</span>' : '') + (T.err ? '<span class="err" role="alert">' + T.err + '</span>' : '') +
     '<button class="cta" style="background:' + (S.wallet ? c : 'var(--cur)') + '" data-act="' + (S.wallet ? 'review' : 'wallet') + '"' + (S.wallet && q.n <= 0 ? ' disabled' : '') + '>' + (!S.wallet ? 'Connect wallet to trade' : 'Review ' + (buy ? 'buy' : 'sell')) + '</button>' +
-    '<span class="note">' + (buy ? 'USDC moves from your wallet into this market\'s vault when the order fills. Each winning share pays $1.' : 'Selling before settlement locks in your gain or loss now.') + '</span>';
+    '<span class="note" data-x="fees">Your tier: 0 · taker 2% · maker 0% (waived at launch). Fees drop as your 30-day volume grows.</span>';
 }
 function validate(m) {
   const q = quote(m), buy = T.act === 'buy';
   if (q.n <= 0) return T.tab === 'dollars' ? 'Enter an amount of at least ' + usd(q.p * U * 1.02) + '.' : 'Enter at least 1 share.';
   if (T.tab === 'limit' && !(q.p >= 0.01 && q.p <= 0.99)) return 'Limit price must be between 1¢ and 99¢.';
-  if (buy && q.cost + q.fee > S.bal + 1e-9) return 'Not enough USDC. You have ' + usd(S.bal) + '.';
+  const need = T.tab === 'limit' && buy ? q.hold : q.cost + q.fee;
+  if (buy && need > S.bal + 1e-9) return 'Not enough USDC. You need ' + usd(need) + (T.tab === 'limit' ? ' held (cost + 2% buffer)' : ' including the fee') + '; you have ' + usd(S.bal) + '.';
   if (!buy && q.n > held(m, T.side)) return 'You only hold ' + held(m, T.side) + ' ' + T.side.toUpperCase() + '.';
   if (T.tab === 'limit' && T.postOnly && m.state === 'live') {
     const crosses = buy ? (T.side === 'yes' ? q.yesEq >= bestAsk(m) : q.yesEq <= bestBid(m)) : q.p <= sellPx(m, T.side);
@@ -1284,7 +1322,7 @@ function submit() {
     m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: q.p, n: q.n, kind: mint ? 'MINT' : 'TRANSFER', you: true });
     m.volSol += cost;
     m.mid = r2(clamp(m.mid + (side === 'yes' ? 0.01 : -0.01), 0.02, 0.98));
-    toast('Bought <span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + '</span> at ' + cents(q.p) + ' for ' + usd(cost + fee) + '. If ' + SIDE + ' wins you get <span class="mono">' + usd(q.n * U) + '</span>.', side === 'yes' ? 'yes' : 'no');
+    toast('Bought <span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + '</span> at ' + cents(q.p) + ': ' + usd(cost) + ' + ' + usd(fee) + ' fee = ' + usd(cost + fee) + '. If ' + SIDE + ' wins you get <span class="mono">' + usd(q.n * U) + '</span>.', side === 'yes' ? 'yes' : 'no');
   } else if (T.tab !== 'limit') {
     if (m.state !== 'live') return;
     sellShares(m, side, q.n);
@@ -1298,10 +1336,10 @@ function submit() {
       m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: px, n: q.n, kind: capRoomPairs(m) >= q.n ? 'MINT' : 'TRANSFER', you: true });
       toast('Your limit crossed the book, so it filled right away at <span class="mono">' + cents(px) + '</span>, better than your ' + cents(q.p) + '.', 'info');
     } else {
-      S.bal -= q.cost;
+      S.bal -= q.hold;
       const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: m.state === 'auction' ? 'queued' : 'open' });
       o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '');
-      toast((m.state === 'auction' ? 'Queued for the auction: ' : 'Buy order resting on the book: ') + '<span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. ' + usd(q.cost) + ' held until it fills.', 'info');
+      toast((m.state === 'auction' ? 'Queued for the auction: ' : 'Buy order resting on the book: ') + '<span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. ' + usd(q.hold) + ' held until it fills (cost + 2% buffer).', 'info');
     }
   } else {
     if (q.p <= sellPx(m, side)) sellShares(m, side, q.n, 'Your price was at or below the best bid, so it sold right away at ' + cents(sellPx(m, side)) + '.');
@@ -1356,7 +1394,7 @@ function renderHow() {
     '<section class="panel"><h2 class="h2">3 · FOUR WAYS A TRADE SETTLES</h2><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Buyer</th><th>Seller</th><th>What happens</th><th>Pairs</th></tr></thead><tbody><tr><td>Buy YES</td><td>Buy NO</td><td><span class="tag" style="color:var(--cur);border-color:rgba(230,0,0,.35)">MINT</span> both lock USDC, a new pair is created</td><td class="mono">+1</td></tr><tr><td>Buy YES</td><td>Sell YES</td><td><span class="tag">TRANSFER</span> YES changes hands</td><td class="mono">0</td></tr><tr><td>Sell NO</td><td>Sell YES</td><td><span class="tag">MERGE</span> pair burned, $1 split</td><td class="mono">−1</td></tr><tr><td>Buy NO</td><td>Sell NO</td><td><span class="tag">TRANSFER</span> NO changes hands</td><td class="mono">0</td></tr></tbody></table></div><p>Mint is why a market needs no market maker to start. Merge is why you can always cash out.</p></section>' +
     '<section class="panel"><h2 class="h2">4 · WHY IT CAN\'T BE PROFITABLY RIGGED</h2><p>Anyone could force a graduation YES by buying out the rest of the token\'s bonding curve on its launchpad. So each market\'s size is limited to half of that cost, which Burbit reads from the launchpad. The most an attacker can win is less than what forcing costs.</p><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Curve sold</th><th>Forcing cost (on the launchpad)</th><th>Max size (USDC)</th><th>Max (pairs)</th></tr></thead><tbody>' + capRows + '</tbody></table></div></section>' +
     '<section class="panel"><h2 class="h2">5 · LIMIT ORDERS</h2><p>"Set your odds" places a limit order: buy or sell YES or NO at a price you choose, or better. If nobody matches it right away it waits on the order book until someone takes it, you cancel it, or the market halts (then it\'s returned in full). "Quick bet" and "Sell now" take the best price already on the book instead. Burbit never trades against you; every trade is between two users.</p></section>' +
-    '<section class="panel"><h2 class="h2">6 · WHAT BURBIT NEVER DOES</h2><p>It never creates, lists or trades tokens on a launchpad. It never takes a side or puts in its own capital; it earns a taker fee of <span class="mono">0.07 × p × (1 − p)</span> of the payout, at most 1.75%, with 20% rebated to makers. It needs no permission from any launchpad: it reads public accounts. If an account can\'t be parsed, the market voids and everyone gets their collateral back.</p></section>' +
+    '<section class="panel"><h2 class="h2">6 · WHAT BURBIT NEVER DOES</h2><p>It never creates, lists or trades tokens on a launchpad. It never takes a side or puts in its own capital; it earns trading fees: takers pay 2% of their fill value and makers 1% (waived at launch), falling with 30-day volume, and busy makers eventually earn part of the taker fee. It needs no permission from any launchpad: it reads public accounts. If an account can\'t be parsed, the market voids and everyone gets their collateral back.</p></section>' +
     '</div><p class="fnt" style="font-size:12px">This is a clickable prototype with simulated data. Token names, prices and wallets are made up. Numbers for caps and forcing cost follow the Burbit v3 spec.</p>';
 }
 
@@ -1421,8 +1459,9 @@ const EX = {
   book: ['Order book', 'Every open limit order, split into asks (people selling) and bids (people buying). Switch between Trade Yes and Trade No to see the same book from either side: a YES bid at 0.40 is the same as a NO ask at 0.60, because YES + NO always equals 1. ' + 'Real limit orders from users, all priced in YES. "Buy NO at 0.70" appears here as an ask at 0.30, so YES and NO share one book and one price. Burbit never puts in its own money. Orders marked YOU are yours.'],
   trades: ['Trade kinds', 'MINT: a YES buyer and a NO buyer lock $1 together and create a new pair. TRANSFER: existing shares change hands. MERGE: a YES seller and a NO seller burn a pair and split its $1. AUCTION: filled at the opening cross.'],
   chart: ['Chance over time', 'How the YES chance has moved since the market opened. The shaded band is the opening auction; grey is after trading closed.'],
-  quick: ['Quick bet', 'Takes the best price on the book right now (immediate-or-cancel with a slippage limit). Takers pay 0.07 × p × (1 − p) of the payout per share: at most 1.75% at 50/50, nearly nothing near certainty.'],
-  limit: ['Set your odds', 'A limit order at your price. It rests on the book until someone takes it, you cancel it, its guard voids it, or the market halts. Makers pay no fee and get 20% of the taker\'s fee as a rebate.'],
+  quick: ['Buying or selling now', 'Takes the best price already on the book. Because you take liquidity you pay the taker fee: 2% of your own fill value at tier 0 (lower as your 30-day volume grows). The panel always shows the fee and the total before you confirm.'],
+  limit: ['Limit orders', 'An order at your price that waits on the book until someone takes it, you cancel it, it expires, or the market halts. Resting orders are makers: the maker fee is waived at launch (normally 1% at tier 0). A buy holds its cost plus a 2% buffer; anything unused comes back. If your price would fill right away, it is charged as a taker (2%).'],
+  fees: ['Fees', 'Both sides of a trade pay, on their own fill value, and rates fall as your 30-day volume grows. Tier 0: taker 2%, maker 1% (waived at launch). Opening auction fills: 1%. Merging, cancelling, claiming and withdrawing are free. A winning share always pays exactly $1.'],
   pos: ['Your position', 'Shares you hold and what they\'re worth at the current best price. Cash out any time before close by selling on the book, or merge YES+NO pairs back into $1 each.'],
   cashout: ['Cash out', 'Sells your shares to the best bid right now. Either another trader buys them (transfer), or a NO seller and you burn a pair together (merge).'],
   merge: ['Merge', 'One YES plus one NO is always worth exactly $1, so you can turn pairs back into USDC at any time, even after trading halts. It\'s free.'],
@@ -1581,6 +1620,9 @@ renderTop();
 go('feed');
 setSpeed(1);
 })();
+</script>
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
 </script>
 </body>
 </html>
