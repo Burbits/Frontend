@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/*
+  Burbit design tokens: the source of truth for colours, type and radii.
+  They mirror the HTML prototype in /prototype. Use them through Tailwind
+  utilities (bg-surface, text-yes, font-mono, rounded-md...) rather than
+  raw hex values, so a token change updates the whole app.
+*/
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-subtle: #f7f7f8;
+  --color-muted-bg: #f3f4f6;
+  --color-line: #ecedef;
+  --color-line-strong: #dfe1e5;
+
+  --color-ink: #0e0f11;
+  --color-ink-2: #3c4049;
+  --color-muted: #6b7079;
+  --color-faint: #7a7f88;
+
+  /* Burbit red is the brand; NO is blue so it never reads as the brand. */
+  --color-brand: #e60000;
+  --color-logo: #f70000;
+  --color-brand-soft: #f4b4b4;
+  --color-yes: #0b8f50;
+  --color-no: #2563eb;
+  --color-info: #475569;
+
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-pixel: "Silkscreen", ui-monospace, Menlo, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-info);
+    outline-offset: 2px;
+  }
+}
+
+/* Numbers that update in place (prices, countdowns) must not jitter. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
