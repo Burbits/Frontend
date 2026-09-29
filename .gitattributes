@@ -1,0 +1,4 @@
+# The HTML prototype and early design notes are reference material, not app code:
+# leave them out of GitHub's language statistics.
+prototype/** linguist-documentation
+design/** linguist-documentation
