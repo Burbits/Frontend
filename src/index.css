@@ -31,8 +31,21 @@
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-pixel: "Silkscreen", ui-monospace, Menlo, monospace;
 
+  /* Light fills behind YES / NO / brand / info labels, badges and depth bars. */
+  --color-yes-tint: rgb(11 143 80 / 0.1);
+  --color-no-tint: rgb(37 99 235 / 0.1);
+  --color-brand-tint: rgb(230 0 0 / 0.08);
+  --color-info-tint: rgb(71 85 105 / 0.1);
+  --color-muted-tint: rgb(139 143 152 / 0.12);
+
   --radius-sm: 4px;
   --radius-md: 8px;
+
+  /* Breakpoints match the prototype: phone layout up to 700px,
+     tablet adjustments up to 900px and 1180px. */
+  --breakpoint-md: 701px;
+  --breakpoint-lg: 901px;
+  --breakpoint-xl: 1181px;
 }
 
 @layer base {

@@ -24,7 +24,7 @@ export default function SideRail() {
             title={item.label}
             aria-current={active ? 'page' : undefined}
             className={`flex size-11 items-center justify-center rounded-[6px] transition-colors ${
-              active ? 'bg-muted-bg text-ink' : 'text-muted hover:bg-subtle hover:text-ink'
+              active ? 'bg-muted-bg text-ink' : 'text-muted hover:text-ink'
             }`}
           >
             <Icon size={20} />
