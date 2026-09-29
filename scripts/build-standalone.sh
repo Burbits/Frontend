@@ -15,6 +15,8 @@ cd "$(dirname "$0")/.."
   printf '<link rel="manifest" href="manifest.webmanifest">\n'
   printf '<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">\n'
   printf '<link rel="apple-touch-icon" href="icons/icon-180.png">\n'
+  # The Claude viewer adds this reset itself; a standalone page needs it explicitly.
+  printf '<style>body{margin:0}img{max-width:100%%}[hidden]{display:none!important}</style>\n'
   sed -n '1,/<\/style>/p' prototype/burbit-prototype.html
   printf '</head>\n<body>\n'
   sed '1,/<\/style>/d' prototype/burbit-prototype.html
