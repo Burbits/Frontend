@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { Badge, Chance, ClosesText, Ident, OddsButtons, Spark, SrcBadge, SrcMark, TypeTag } from '../components/burbit/bits'
 import { HeroChart } from '../components/burbit/charts'
 import {
@@ -13,7 +13,7 @@ type Open = ReturnType<typeof useOpenMarket>
 export default function MarketsPage() {
   useSim()
   const open = useOpenMarket()
-  useEffect(() => { setView('feed') }, [])
+  useLayoutEffect(() => { setView('feed') }, [])
 
   const evs = events(S.markets.filter((m) => passes(m)))
   const cnt = (f: (m: Market) => boolean) => S.markets.filter(f).length

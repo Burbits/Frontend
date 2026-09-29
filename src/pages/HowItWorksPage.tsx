@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { SOLUSD, setView } from '../sim/engine'
 import { usd } from '../sim/format'
 
@@ -6,7 +6,7 @@ const CAP_ROWS: [number, number][] = [[0, 19.52], [50, 13.12], [70, 8.62], [80, 
 const MINT_TAG = { color: 'var(--cur)', borderColor: 'rgba(230,0,0,.35)' }
 
 export default function HowItWorksPage() {
-  useEffect(() => { setView('how') }, [])
+  useLayoutEffect(() => { setView('how') }, [])
   return (
     <>
       <div className="feed-head">

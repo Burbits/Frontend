@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useLayoutEffect, type ReactNode } from 'react'
 import { Badge, Ident, TypeTag } from '../components/burbit/bits'
 import { S, claim, claimAll, isSettled, mk, payout, posValue, question, setView, ui } from '../sim/engine'
 import { sgn, usd } from '../sim/format'
@@ -11,7 +11,7 @@ type Row = { key: string; m: Market; p: Position; cells: [ReactNode, ReactNode, 
 export default function PortfolioPage() {
   useSim()
   const open = useOpenMarket()
-  useEffect(() => { setView('port') }, [])
+  useLayoutEffect(() => { setView('port') }, [])
 
   if (!S.wallet)
     return (

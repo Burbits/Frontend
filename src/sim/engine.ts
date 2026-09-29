@@ -56,7 +56,7 @@ export function emit() { version++; listeners.forEach((fn) => fn()) }
 
 /* ---------- markets ---------- */
 function M(o: Partial<Market> & Pick<Market, 'id' | 'tick' | 'name' | 'col'>): Market {
-  const m = Object.assign({ type: 'grad', win: 15, launchpad: 'pump.fun', volSol: 0, state: 'live', openPct: 70, mu: 0.03, vol: 0.3, oi: 0, trades: [], hist: [], outcome: null, capFix: null, halt: null, fairFix: 0.3, dev: '9fQ2…k1Lm', q: '', pct: 0, mid: 0.3, created: 0, auctionEnd: 0, closeAt: 0, deadlineAt: 0, mint: '' }, o) as Market
+  const m = Object.assign({ type: 'grad', win: 15, launchpad: 'pump.fun', volSol: 0, state: 'live', openPct: 70, mu: 0.03, vol: 0.3, oi: 0, trades: [], hist: [], outcome: null, capFix: null, halt: null, fairFix: 0.3, dev: '9fQ2…k1Lm', q: '', pct: 0, mid: 0.3, auctionEnd: 0, closeAt: 0, deadlineAt: 0, mint: '' }, o) as Market
   m.mint = (m.launchpad === 'Pons' ? '0x' + (hash(m.tick) % 65536).toString(16) : m.tick.slice(0, 4)) + '…' + (m.launchpad === 'pump.fun' ? 'pump' : m.launchpad === 'Pons' ? '7c1e' : 'rlab')
   if (!m.volSol) m.volSol = m.oi * 2.6 + rnd(45, 300)
   return m
@@ -215,7 +215,7 @@ function halt(m: Market, why: 'grad' | 'close' | 'rug') {
   refundOrders(m, why === 'grad' ? 'halted: graduated' : 'halted: trading closed')
 }
 function graduate(m: Market) {
-  m.pct = 100; m.gradIn = S.t - m.created; halt(m, 'grad'); m.resolveAt = S.t + 3
+  m.pct = 100; m.gradIn = S.t - (m.created ?? 0); halt(m, 'grad'); m.resolveAt = S.t + 3
   toast('$' + m.tick + ' graduated on ' + m.launchpad + '. Market halted; settling YES.', 'cur', { act: 'open', id: m.id, label: 'View market' })
 }
 function resolve(m: Market, out: 'yes' | 'no') {
@@ -264,7 +264,7 @@ function step(m: Market) {
   } else if (m.state === 'halted') {
     if (m.halt === 'grad' && S.t >= (m.resolveAt ?? 0)) resolve(m, 'yes')
     else if (m.halt === 'close') {
-      if (m.type === 'grad' && m.pct >= 100) { m.gradIn = S.t - m.created; m.halt = 'grad'; m.resolveAt = S.t + 3; toast('$' + m.tick + ' graduated after trading closed but before the deadline. Settling YES.', 'cur') }
+      if (m.type === 'grad' && m.pct >= 100) { m.gradIn = S.t - (m.created ?? 0); m.halt = 'grad'; m.resolveAt = S.t + 3; toast('$' + m.tick + ' graduated after trading closed but before the deadline. Settling YES.', 'cur') }
       else if (S.t >= m.deadlineAt) resolve(m, m.type === 'grad' ? 'no' : (m.rugHit ? 'yes' : 'no'))
     }
   }

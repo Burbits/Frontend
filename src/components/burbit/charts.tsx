@@ -8,7 +8,7 @@ const AXIS = { fill: '#7A7F88', fontSize: 11, fontFamily: 'IBM Plex Mono, monosp
 /** Chart in the featured (hero) card: chance since the market opened, with an area fill. */
 export function HeroChart({ m }: { m: Market }) {
   const W = 600, H = 150
-  const pts = m.hist.filter((h) => h.t >= m.created)
+  const pts = m.hist.filter((h) => h.t >= (m.created ?? Infinity))
   if (pts.length < 2) return null
   const t0 = pts[0].t, t1 = Math.max(S.t, t0 + 60)
   const X = (t: number) => ((t - t0) / (t1 - t0) * W).toFixed(1)
