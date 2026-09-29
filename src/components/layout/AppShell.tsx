@@ -10,7 +10,7 @@ export default function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         {/* Bottom padding keeps content clear of the phone tab bar. */}
-        <main className="flex min-w-0 flex-col gap-5 px-4 pt-5 pb-32 md:px-6 md:pt-6 md:pb-16">
+        <main className="flex min-w-0 flex-col gap-[18px] px-4 pt-4 pb-[180px] md:px-6 md:pt-6 md:pb-[120px]">
           <Outlet />
         </main>
       </div>
