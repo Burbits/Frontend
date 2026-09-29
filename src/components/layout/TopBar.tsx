@@ -7,7 +7,7 @@ export default function TopBar() {
       className="sticky z-30 flex h-14 items-center gap-2.5 border-b border-line bg-white/94 px-4 backdrop-blur-[6px] md:gap-4 md:px-6"
       style={{ top: 'env(safe-area-inset-top, 0px)' }}
     >
-      <Link to="/" className="font-pixel text-lg tracking-[0.05em]" aria-label="Burbit home">
+      <Link to="/" className="font-pixel text-lg leading-[1.45] tracking-[0.05em]" aria-label="Burbit home">
         BURBIT
       </Link>
 
@@ -28,7 +28,7 @@ export default function TopBar() {
       {/* Wallet connection lands with the Solana wallet adapter in a later PR. */}
       <button
         type="button"
-        className="h-9 rounded-sm bg-brand px-3.5 text-[13px] font-semibold text-white hover:brightness-95"
+        className="h-9 rounded-sm border border-brand bg-brand px-3.5 text-[13px] font-semibold text-white hover:brightness-95"
       >
         Connect wallet
       </button>
