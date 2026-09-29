@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge, Ident, SrcMark, TypeTag } from '../components/burbit/bits'
 import { MarketChart } from '../components/burbit/charts'
@@ -17,7 +17,8 @@ export default function MarketPage() {
   const { marketId } = useParams()
   const open = useOpenMarket()
   const navigate = useNavigate()
-  useEffect(() => { setView('market', marketId ?? null) }, [marketId])
+  // Record the open market before the page paints, so a click can never act on the previous one.
+  useLayoutEffect(() => { setView('market', marketId ?? null) }, [marketId])
 
   const m = mk(marketId)
   // The phone "Buy YES / Buy NO" bar needs extra room at the bottom of the page.

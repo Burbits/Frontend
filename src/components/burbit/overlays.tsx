@@ -15,6 +15,7 @@ export function Toasts() {
           <div>
             {/* Messages are built by the simulation from its own data (no user input). */}
             <span dangerouslySetInnerHTML={{ __html: t.msg }} />
+            {t.action && ' '}
             {t.action && (
               <button
                 className="btn ghost"

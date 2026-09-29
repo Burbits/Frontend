@@ -1079,7 +1079,7 @@ function updateMarket(force) {
   $('#r-trades').innerHTML = '<div class="bk-h"><h2 class="h2">TRADES</h2><span>mint = new pair · merge = pair burned</span></div><div class="trow hd"><span>TIME</span><span>SIDE</span><span>PRICE</span><span style="text-align:right">SHARES</span><span style="text-align:right">KIND</span></div>' +
     (m.trades.length ? m.trades.slice(0, 11).map((t) => '<div class="trow"' + (t.you ? ' style="background:rgba(230,0,0,.06)"' : '') + '><span class="mut">' + clock(BASE + t.t) + '</span><span style="color:' + (t.side.includes('YES') ? 'var(--yes)' : t.side.includes('NO') ? 'var(--no)' : 'var(--info)') + '">' + t.side + '</span><span>' + cents(t.p) + '</span><span style="text-align:right">' + t.n + (t.you ? ' <span class="px" style="font-size:9px;color:var(--cur)">YOU</span>' : '') + '</span><span class="tag" style="justify-self:end;' + (kc[t.kind] || '') + '">' + t.kind + '</span></div>').join('') : '<div class="empty" style="margin:0 16px;padding:20px;font-size:13px">No trades yet. The auction hasn\'t cleared.</div>');
   // ticket
-  const key = [m.id, m.state, T.side, T.tab, T.act, !!S.wallet, m.oi >= cap(m) - 1e-6, held(m, 'yes'), held(m, 'no')].join('|');
+  const key = [m.id, m.state, T.side, T.tab, T.act, !!S.wallet, m.oi >= cap(m) - 1e-6, held(m, 'yes'), held(m, 'no'), bestAsk(m), bestBid(m), r2(m.mid), S.bal.toFixed(2)].join('|');
   const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('#r-tform');
   if (force || (key !== S.lastTicketKey && !focused) || (key.split('|')[1] !== S.lastTicketKey.split('|')[1])) { renderTicketForm(m); S.lastTicketKey = key; }
   renderTicketSum(m);

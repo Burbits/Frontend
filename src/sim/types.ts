@@ -37,7 +37,8 @@ export type Market = {
   fairFix: number
   mu: number
   vol: number
-  created: number
+  /** When the market opened (sim seconds). Settled demo markets have none, like in the prototype. */
+  created?: number
   auctionEnd: number
   closeAt: number
   deadlineAt: number
