@@ -36,13 +36,22 @@ npm run lint       # lint src/
 
 ```
 src/
-  app/            App routes
+  app/              App routes
   components/
-    layout/       App shell: top bar, desktop side rail, mobile bottom tabs
-    ui/           Shared pieces (logo, icons, ...)
-  pages/          One file per screen
-  index.css       Tailwind import and Burbit design tokens
+    layout/         App shell: top bar, desktop side rail, mobile bottom tabs (Tailwind)
+    burbit/         Burbit pieces: market cards bits, charts, trade panel, overlays, explain texts
+    ui/             Logo and icons
+  pages/            Markets, market page, Portfolio, How it works
+  sim/              Simulated backend: markets, order book, trading, fees, settlement
+  styles/           prototype.css: the prototype's component styles, on our Tailwind tokens
+  index.css         Tailwind import and Burbit design tokens
 ```
+
+## How the app works today
+
+The whole prototype is ported to React and matches it screen for screen (checked by screenshot comparison at desktop and phone sizes). Until the real backend exists, `src/sim/engine.ts` simulates it: markets, prices, the order book, other traders, fees (Burbitarch `docs/09-FEES-AND-ECONOMICS.md`), auctions, halts, settlement and a demo wallet with $500 USDC. Components read the simulation's state and re-render through `useSim()`.
+
+**Explain** (top bar) outlines each part of the screen and says what it is. **Demo** (bottom right) speeds up or pauses time and triggers events on the open market. Both are presentation tools and go away when the real backend lands.
 
 ## Working together
 
@@ -52,11 +61,10 @@ src/
 
 ## Roadmap
 
-1. **Setup** (this PR): React + Tailwind + PWA, design tokens, app shell with navigation, page routes.
-2. **Mock API** shaped like the real indexer API (`Burbitarch/docs/08-INDEXER-AND-API-SPEC.md`), so screens are built against the real contract and later switch to the live backend without changes.
-3. **Screens**, ported from the prototype: markets home, market page, trade panel, portfolio, how it works.
-4. **Wallet**: Solana wallet adapter (Phantom, Solflare, Backpack), USDC balance, trading session keys.
-5. **Live backend**: swap the mock API for the real indexer and program.
+1. ~~Setup: React + Tailwind + PWA, design tokens, app shell.~~
+2. ~~Port every prototype screen and state to React, with the simulation as a stand-in backend.~~
+3. **Wallet**: Solana wallet adapter (Phantom, Solflare, Backpack), USDC balance, trading session keys.
+4. **Live backend**: replace `src/sim` with the real indexer API (Burbitarch `docs/08-INDEXER-AND-API-SPEC.md`) and program, keeping the same components.
 
 ## The prototype
 

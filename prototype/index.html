@@ -639,7 +639,7 @@ function uncross(m) {
     if (n < o.shares) { o.status = 'filled'; o.note = 'rest refunded: market full'; }
     m.oi = Math.min(cap(m) + 0.001, m.oi + n * U);
     m.trades.unshift({ t: S.t, side: o.side === 'yes' ? 'BUY YES' : 'BUY NO', p: px, n, kind: 'AUCTION', you: true });
-    if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + p.toFixed(2) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + cents(px) + '</span> (your limit was ' + cents(o.price) + '). Auction fee 1%: ' + usd(f) + '. Everything unused was returned.', 'info', { act: 'open', id: m.id, label: 'View market' });
+    if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + cents(p) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + cents(px) + '</span> (your limit was ' + cents(o.price) + '). Auction fee 1%: ' + usd(f) + '. Everything unused was returned.', 'info', { act: 'open', id: m.id, label: 'View market' });
   }
 }
 function halt(m, why) {
@@ -994,7 +994,7 @@ function sidePositions() {
     const val = posValue(m, p), cost = p.cy + p.cn, pl = val - cost; tot += pl;
     const claim = (m.state === 'resolved' || m.state === 'void') ? payout(m, p) : 0;
     const legs = (p.yes ? '<span class="c-yes">' + p.yes + ' YES</span>' : '') + (p.yes && p.no ? ' · ' : '') + (p.no ? '<span class="c-no">' + p.no + ' NO</span>' : '');
-    if (claim > 0) h += '<div class="pcard" style="flex-direction:row;align-items:center;justify-content:space-between;background:rgba(230,0,0,.07);border-color:rgba(230,0,0,.3)"><div style="display:flex;flex-direction:column;gap:2px;font-size:12px"><span><span class="mono" style="font-weight:600">$' + m.tick + '</span><span class="mut"> ' + (m.state === 'void' ? 'void · refund' : 'settled ' + m.outcome.toUpperCase()) + '</span></span><span class="mono mut">' + legs + '</span></div><button class="btn solid-cur" data-act="claim" data-id="' + id + '">Claim ' + sol(claim) + '</button></div>';
+    if (claim > 0) h += '<div class="pcard" style="flex-direction:row;align-items:center;justify-content:space-between;background:rgba(230,0,0,.07);border-color:rgba(230,0,0,.3)"><div style="display:flex;flex-direction:column;gap:2px;font-size:12px"><span><span class="mono" style="font-weight:600">$' + m.tick + '</span><span class="mut"> ' + (m.state === 'void' ? 'void · refund' : 'settled ' + m.outcome.toUpperCase()) + '</span></span><span class="mono mut">' + legs + '</span></div><button class="btn solid-cur" data-act="claim" data-id="' + id + '">Claim ' + usd(claim) + '</button></div>';
     else h += '<button class="pcard" data-act="open" data-id="' + id + '"><span style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span class="mono" style="font-weight:600">$' + m.tick + '</span>' + badge(m) + '</span><span style="font-size:13px;color:var(--tx2)">' + question(m) + '</span><span class="mono" style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span>' + legs + '</span><span class="' + (pl >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(pl) + '</span></span></button>';
   }
   if (!h) h = '<div class="empty" style="padding:16px;font-size:13px">No open positions yet.</div>';
@@ -1093,7 +1093,7 @@ function updateMarket(force) {
   // trades
   const kc = { MINT: 'color:var(--cur);border-color:rgba(230,0,0,.35)', TRANSFER: '', MERGE: '', AUCTION: 'color:var(--info);border-color:rgba(71,85,105,.35)' };
   $('#r-trades').innerHTML = '<div class="bk-h"><h2 class="h2">TRADES</h2><span>mint = new pair · merge = pair burned</span></div><div class="trow hd"><span>TIME</span><span>SIDE</span><span>PRICE</span><span style="text-align:right">SHARES</span><span style="text-align:right">KIND</span></div>' +
-    (m.trades.length ? m.trades.slice(0, 11).map((t) => '<div class="trow"' + (t.you ? ' style="background:rgba(230,0,0,.06)"' : '') + '><span class="mut">' + clock(BASE + t.t) + '</span><span style="color:' + (t.side.includes('YES') ? 'var(--yes)' : t.side.includes('NO') ? 'var(--no)' : 'var(--info)') + '">' + t.side + '</span><span>' + cents(t.p) + '</span><span style="text-align:right">' + t.n + (t.you ? ' <span class="px" style="font-size:9px;color:var(--cur)">YOU</span>' : '') + '</span><span style="justify-self:end" class="tag" ' + (kc[t.kind] ? 'style="' + kc[t.kind] + '"' : '') + '>' + t.kind + '</span></div>').join('') : '<div class="empty" style="margin:0 16px;padding:20px;font-size:13px">No trades yet. The auction hasn\'t cleared.</div>');
+    (m.trades.length ? m.trades.slice(0, 11).map((t) => '<div class="trow"' + (t.you ? ' style="background:rgba(230,0,0,.06)"' : '') + '><span class="mut">' + clock(BASE + t.t) + '</span><span style="color:' + (t.side.includes('YES') ? 'var(--yes)' : t.side.includes('NO') ? 'var(--no)' : 'var(--info)') + '">' + t.side + '</span><span>' + cents(t.p) + '</span><span style="text-align:right">' + t.n + (t.you ? ' <span class="px" style="font-size:9px;color:var(--cur)">YOU</span>' : '') + '</span><span class="tag" style="justify-self:end;' + (kc[t.kind] || '') + '">' + t.kind + '</span></div>').join('') : '<div class="empty" style="margin:0 16px;padding:20px;font-size:13px">No trades yet. The auction hasn\'t cleared.</div>');
   // ticket
   const key = [m.id, m.state, T.side, T.tab, T.act, !!S.wallet, m.oi >= cap(m) - 1e-6, held(m, 'yes'), held(m, 'no')].join('|');
   const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('#r-tform');
@@ -1135,7 +1135,7 @@ function updateMarket(force) {
     '<p style="font-size:12px;line-height:18px;color:var(--mut)">' + (m.type === 'grad' ? 'USDC locked in this market. The max is a safety limit that keeps rigging the result more expensive than it could pay.' : m.type === 'bonded' ? 'The max is the creator\'s bond, so every YES share is fully paid if the dev rugs.' : 'The max stays small because the dev could decide this from another wallet.') + '</p>';
   // rules
   $('#r-rules').innerHTML = '<h2 class="h2" style="color:var(--tx)">HOW THIS SETTLES</h2>' + (m.type === 'grad'
-    ? '<span><span class="c-yes" style="font-weight:600">YES</span> the moment $' + m.tick + '\' graduates on ' + m.launchpad + ' before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> if ' + clock(BASE + m.deadlineAt) + ' passes first. Trading stops 5 minutes earlier, at ' + clock(BASE + m.closeAt) + '.</span><span>Read straight from ' + m.launchpad + '\'s on-chain data. No oracle, no vote. The dev wallet can\'t trade this market.</span>'
+    ? '<span><span class="c-yes" style="font-weight:600">YES</span> the moment $' + m.tick + ' graduates on ' + m.launchpad + ' before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> if ' + clock(BASE + m.deadlineAt) + ' passes first. Trading stops 5 minutes earlier, at ' + clock(BASE + m.closeAt) + '.</span><span>Read straight from ' + m.launchpad + '\'s on-chain data. No oracle, no vote. The dev wallet can\'t trade this market.</span>'
     : m.type === 'bonded' ? '<span><span class="c-yes" style="font-weight:600">YES</span> in the same instruction the dev takes their bag out of escrow before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> if the bag is still in escrow at the deadline. The dev gets the bond back and keeps what they earned selling YES.</span>'
     : '<span><span class="c-yes" style="font-weight:600">YES</span> if the dev wallet\'s balance of $' + m.tick + ' falls below half its launch bag before ' + clock(BASE + m.deadlineAt) + '.</span><span><span class="c-no" style="font-weight:600">NO</span> otherwise. Read from the dev\'s token account.</span>');
   // mobile bar
@@ -1148,7 +1148,7 @@ function orderRow(o) {
   const m = mk(o.mid);
   const st = { open: ['OPEN', 'b-live'], partial: ['PARTIAL', 'b-live'], queued: ['IN AUCTION', 'b-auc'], filled: ['FILLED', 'b-mut'], voided: ['VOIDED', 'b-cur'], refunded: ['REFUNDED', 'b-mut'], cancelled: ['CANCELLED', 'b-mut'], expired: ['EXPIRED', 'b-mut'] }[o.status];
   const canCancel = ['open', 'partial', 'queued'].includes(o.status);
-  return '<div class="orow"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="mono"><span class="mut">' + o.act.toUpperCase() + '</span> <span class="' + (o.side === 'yes' ? 'c-yes' : 'c-no') + '">' + o.side.toUpperCase() + '</span> ' + o.filled + '/' + o.shares + ' @ ' + cents(o.price) + (S.view === 'port' && m ? ' <span class="mut">$' + m.tick + '</span>' : '') + '</span><span class="mut" style="font-size:11px">' + (o.note ? o.note : 'limit order') +  + '</span></div><div style="display:flex;align-items:center;gap:8px"><span class="badge ' + st[1] + '"><i></i>' + st[0] + '</span>' + (canCancel ? '<button class="btn ghost" style="height:28px;padding:0 8px;font-size:12px" data-act="cancel" data-id="' + o.id + '">Cancel</button>' : '') + '</div></div>';
+  return '<div class="orow"><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="mono"><span class="mut">' + o.act.toUpperCase() + '</span> <span class="' + (o.side === 'yes' ? 'c-yes' : 'c-no') + '">' + o.side.toUpperCase() + '</span> ' + o.filled + '/' + o.shares + ' @ ' + cents(o.price) + (S.view === 'port' && m ? ' <span class="mut">$' + m.tick + '</span>' : '') + '</span><span class="mut" style="font-size:11px">' + (o.note ? o.note : 'limit order') + '</span></div><div style="display:flex;align-items:center;gap:8px"><span class="badge ' + st[1] + '"><i></i>' + st[0] + '</span>' + (canCancel ? '<button class="btn ghost" style="height:28px;padding:0 8px;font-size:12px" data-act="cancel" data-id="' + o.id + '">Cancel</button>' : '') + '</div></div>';
 }
 function chartHTML(m) {
   const W = 900, H = 170;
@@ -1367,7 +1367,7 @@ function renderPort() {
     const name = '<button class="mcell" data-act="open" data-id="' + id + '">' + ident(m, 28) + '<span style="display:flex;flex-direction:column;min-width:0"><span class="meta"><span class="tk">$' + m.tick + '</span>' + typeTag(m) + '</span><span class="q" style="font-size:13px">' + question(m) + '</span></span></button>';
     if ((m.state === 'resolved' || m.state === 'void') && !p.claimed) {
       const pay = payout(m, p); claimTot += pay; pl += pay - cost;
-      (pay > 0 ? claimRows : doneRows).push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right">' + (pay > 0 ? '<button class="btn solid-cur" data-act="claim" data-id="' + id + '">' + (m.state === 'void' ? 'Redeem ' : 'Claim ') + sol(pay) + '</button>' : '<span class="mono c-no">' + sgn(-cost) + '</span>') + '</span></div>');
+      (pay > 0 ? claimRows : doneRows).push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right">' + (pay > 0 ? '<button class="btn solid-cur" data-act="claim" data-id="' + id + '">' + (m.state === 'void' ? 'Redeem ' : 'Claim ') + usd(pay) + '</button>' : '<span class="mono c-no">' + sgn(-cost) + '</span>') + '</span></div>');
     } else if (p.claimed) {
       doneRows.push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right mono mut">claimed ' + usd(p.claimedAmt) + '</span></div>');
     } else {
@@ -1425,7 +1425,7 @@ function renderDemo() {
     '<li>On $GORP press <i>Graduate now</i>: it halts, refunds orders, settles YES. Claim in Portfolio.</li>' +
     '<li><button data-act="open" data-id="brrr">$BRRR</button> is full (max size). <button data-act="open" data-id="plank">$PLANK</button> lets you merge a YES+NO pair.</li>' +
     '<li><button data-act="open" data-id="lumen">$LUMEN</button> is a bonded rug market. Buy protection, then <i>Dev pulls bag</i>.</li>' +
-    '<li><button data-act="open" data-id="vanta">$VANTA</button> was voided: redeem at 0.005 per share.</li></ol></div>';
+    '<li><button data-act="open" data-id="vanta">$VANTA</button> was voided: redeem at 50¢ per share.</li></ol></div>';
   h += '<div class="grp"><div class="grid2"><button class="btn" data-act="spawn">New launch hits 70%</button><button class="btn" data-act="reset">Reset demo</button></div></div>';
   $('#demo').innerHTML = h;
 }
@@ -1469,7 +1469,7 @@ const EX = {
   orders: ['Your orders', 'Every order and what happened to it: open, partial, filled, cancelled, or refunded when the market halted.'],
   rules: ['How it settles', 'The Burbit program reads the launchpad account directly: YES the moment the token graduates, NO once the deadline passes without it. No oracle, no vote. The token\'s creator is barred from trading its markets.'],
   bonded: ['Creator-written rug market', 'The creator locks their bag in Burbit\'s escrow and posts a bond. Buyers of YES are buying protection. If the creator takes the bag back before expiry, that is the rug and YES is paid from the bond. Coverage = bond ÷ what the bag is worth now.'],
-  openrug: ['Open rug market', 'Anyone can take either side; it settles from the creator\'s token balance. The creator could decide it from a second wallet, so its maximum size stays small (0.5 USDC) and the app labels it.'],
+  openrug: ['Open rug market', 'Anyone can take either side; it settles from the creator\'s token balance. The creator could decide it from a second wallet, so its maximum size stays small ($75) and the app labels it.'],
   wallet: ['Wallet and balance', 'USDC moves from your wallet into the market\'s vault in the same transaction as your trade. Every share is backed 1:1 by USDC in that vault, and Burbit can\'t touch it.'],
   void: ['Void', 'If a launchpad changes its account layout and Burbit can\'t read it, the market fails safe: every YES and NO share redeems for 50¢, so each pair gets its full $1 back.'],
   portfolio: ['Portfolio', 'Open positions, all your orders and their outcomes, and winnings to claim once markets settle.']
@@ -1484,7 +1484,7 @@ function showX(key) {
 /* ---------- navigation & refresh ---------- */
 function go(view, id, side) {
   S.view = view; S.mid = id || null; T.err = '';
-  if (side) { T.side = side; T.tab = 'quick'; }
+  if (side) { T.side = side; T.act = 'buy'; T.tab = 'dollars'; T.review = false; }
   ['feed', 'port', 'how'].forEach((v) => { const b = $('#nav-' + v); if (b) b.setAttribute('aria-current', (view === v || (view === 'market' && v === 'feed')) ? 'page' : 'false'); });
   if (view !== 'market') { $('#mobbar').hidden = true; document.body.classList.remove('has-mobbar'); }
   if (view === 'feed') renderFeed();
@@ -1578,7 +1578,7 @@ function sellShares(m, side, n, lead) {
   if (side === 'yes') { p.cy -= p.cy / p.yes * n; p.yes -= n; } else { p.cn -= p.cn / p.no * n; p.no -= n; }
   m.volSol += n * px * U;
   m.trades.unshift({ t: S.t, side: 'SELL ' + side.toUpperCase(), p: px, n, kind: merge ? 'MERGE' : 'TRANSFER', you: true });
-  toast((lead ? lead + ' ' : '') + 'Sold <span class="mono">' + n + ' ' + side.toUpperCase() + '</span> at ' + px.toFixed(2) + ' for <span class="mono">' + usd(got) + '</span> (' + (merge ? 'merged with a ' + (side === 'yes' ? 'NO' : 'YES') + ' seller: the pair was burned' : 'another trader bought them') + ').', 'info');
+  toast((lead ? lead + ' ' : '') + 'Sold <span class="mono">' + n + ' ' + side.toUpperCase() + '</span> at ' + cents(px) + ' for <span class="mono">' + usd(got) + '</span> (' + (merge ? 'merged with a ' + (side === 'yes' ? 'NO' : 'YES') + ' seller: the pair was burned' : 'another trader bought them') + ').', 'info');
 }
 function sell(side) { const m = mk(S.mid); if (!m) return; sellShares(m, side, Infinity); refresh(); }
 function merge() {
