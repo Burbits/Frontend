@@ -9,6 +9,7 @@
 /* The prototype relies on a few browser defaults that Tailwind's reset removes. */
 button{padding:1px 6px}
 input{padding:1px 2px}
+option{padding:0 2px 1px}
 h1,h2,h3{font-weight:bold}
 :root{
   /* Prototype variable names, mapped onto the Tailwind @theme tokens in index.css. */
