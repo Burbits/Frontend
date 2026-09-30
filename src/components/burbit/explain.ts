@@ -27,5 +27,8 @@ export const EXPLAIN: Record<string, [string, string]> = {
   openrug: ['Open rug market', 'Anyone can take either side; it settles from the creator\'s token balance. The creator could decide it from a second wallet, so its maximum size stays small ($75) and the app labels it.'],
   wallet: ['Wallet and balance', 'USDC moves from your wallet into the market\'s vault in the same transaction as your trade. Every share is backed 1:1 by USDC in that vault, and Burbit can\'t touch it.'],
   void: ['Void', 'If a launchpad changes its account layout and Burbit can\'t read it, the market fails safe: every YES and NO share redeems for 50¢, so each pair gets its full $1 back.'],
-  portfolio: ['Portfolio', 'Open positions, all your orders and their outcomes, and winnings to claim once markets settle.']
+  pl: ['Profit/Loss', 'How your portfolio value changed over the chosen time range, counting cash, money held in open orders and your positions at the current price. Deposits and withdrawals are not counted as profit.'],
+  claims: ['Claims', 'When a market settles, each winning share is worth $1 and waits here until you claim it. Voided markets return 50¢ per share. Claiming moves the money into your available balance.'],
+  history: ['History', 'Everything you did: trades, limit orders and what happened to them, failed or cancelled orders, merges, claims, deposits and withdrawals.'],
+  portfolio: ['Portfolio', 'Your total value (cash + money held in orders + positions at today\'s price), what you can trade with right now, and buttons to deposit or withdraw USDC. Positions, open orders and history are in the tabs below.']
 }

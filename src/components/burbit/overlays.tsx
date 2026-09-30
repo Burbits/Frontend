@@ -1,5 +1,6 @@
 // Toasts, wallet popup, explain box and demo panel: the app-level overlays from the prototype.
-import { S, claim, demoAction, dismissToast, mk, setSpeed, ui } from '../../sim/engine'
+import { useState } from 'react'
+import { S, claim, demoAction, dismissToast, mk, portfolio, setSpeed, ui } from '../../sim/engine'
 import { usd } from '../../sim/format'
 import { useOpenMarket } from '../../sim/useSim'
 import { EXPLAIN } from './explain'
@@ -71,6 +72,45 @@ export function WalletModal() {
             <button className="btn ghost" onClick={ui.closeWallet}>Cancel</button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+/** Deposit or withdraw USDC between the connected wallet and Burbit (demo only). */
+export function TransferModal() {
+  if (!S.transfer || !S.wallet) return null
+  return <TransferBox key={S.transfer} dep={S.transfer === 'deposit'} />
+}
+
+function TransferBox({ dep }: { dep: boolean }) {
+  const [amt, setAmt] = useState('')
+  const [err, setErr] = useState('')
+  const max = dep ? S.walletUsdc : S.bal
+  const submit = () => setErr(portfolio.transfer(amt))
+  return (
+    <div id="modal" onClick={(e) => { if (e.target === e.currentTarget) portfolio.closeTransfer() }}>
+      <div className="box" role="dialog" aria-modal="true" aria-label={dep ? 'Deposit' : 'Withdraw'}>
+        <h2 className="h2">{dep ? 'DEPOSIT USDC' : 'WITHDRAW USDC'}</h2>
+        <p className="mut" style={{ fontSize: 13 }}>
+          {dep
+            ? 'Move USDC from your wallet (' + S.wallet + ') into Burbit so you can trade.'
+            : 'Send USDC from Burbit back to your wallet (' + S.wallet + '). Money held in open orders stays until you cancel them.'}
+        </p>
+        <div className="kfield">
+          <label htmlFor="tamt">Amount</label>
+          <div className="kin">
+            <span className="mono mut">$</span>
+            <input id="tamt" inputMode="decimal" autoComplete="off" autoFocus value={amt}
+              onChange={(e) => setAmt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+            <button className="btn ghost" style={{ height: 28, padding: '0 8px', fontSize: 12 }} onClick={() => setAmt(portfolio.maxTransfer())}>Max</button>
+          </div>
+        </div>
+        <span className="kline" style={{ marginTop: 0 }}>{dep ? 'In your wallet: ' : 'Available to withdraw: '}<span className="mono">{usd(max)}</span></span>
+        <span className="err" id="terr" role="alert">{err}</span>
+        <button className="cta" style={{ background: 'var(--cur)' }} onClick={submit}>{dep ? 'Deposit' : 'Withdraw'}</button>
+        <button className="btn ghost" onClick={portfolio.closeTransfer}>Cancel</button>
+        <span className="note">Demo only: no real USDC moves. Deposits and withdrawals are free.</span>
       </div>
     </div>
   )

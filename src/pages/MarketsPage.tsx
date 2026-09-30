@@ -1,10 +1,11 @@
 import { useLayoutEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Badge, Chance, ClosesText, Ident, OddsButtons, Spark, SrcBadge, SrcMark, TypeTag } from '../components/burbit/bits'
 import { HeroChart } from '../components/burbit/charts'
 import {
-  FT, LP, S, STATUS, cap, claim, events, heroTop, isOpen, isSettled, mk, movers, passes, payout, posValue, question, setView, shortQ, ui,
+  FT, LP, S, STATUS, cap, events, heroTop, isOpen, isSettled, movers, passes, portfolio, posRows, pvNow, question, setView, shortQ, toClaim, ui,
 } from '../sim/engine'
-import { mmss, sgn, usd } from '../sim/format'
+import { cents, mmss, sgn, usd } from '../sim/format'
 import type { Market } from '../sim/types'
 import { useOpenMarket, useSim } from '../sim/useSim'
 
@@ -219,68 +220,62 @@ function EventCard({ ms, open }: { ms: Market[]; open: Open }) {
   )
 }
 
-function Legs({ yes, no, sep }: { yes: number; no: number; sep: string }) {
-  return (
-    <>
-      {yes ? <span className="c-yes">{yes} YES</span> : null}
-      {yes && no ? sep : null}
-      {no ? <span className="c-no">{no} NO</span> : null}
-    </>
-  )
-}
-
+/** Home side panel: a compact portfolio summary, the money waiting to be claimed and the biggest live positions. */
 function SidePositions({ open }: { open: Open }) {
+  const navigate = useNavigate()
   if (!S.wallet)
     return (
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <h2 className="h2">YOUR POSITIONS</h2>
+        <h2 className="h2">YOUR PORTFOLIO</h2>
         <div className="pcard" style={{ gap: 10 }}>
           <span className="mut" style={{ fontSize: 13 }}>Connect a wallet to see positions and trade.</span>
           <button className="btn solid-tx" onClick={ui.openWallet}>Connect wallet</button>
         </div>
       </section>
     )
-  let tot = 0
-  const rows = []
-  for (const id in S.pos) {
-    const m = mk(id), p = S.pos[id]
-    if (!m || p.claimed || p.yes + p.no === 0) continue
-    if (isSettled(m) && payout(m, p) === 0) continue
-    const val = posValue(m, p), cost = p.cy + p.cn, pl = val - cost
-    tot += pl
-    const claimAmt = isSettled(m) ? payout(m, p) : 0
-    if (claimAmt > 0)
-      rows.push(
-        <div key={id} className="pcard" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(230,0,0,.07)', borderColor: 'rgba(230,0,0,.3)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 12 }}>
-            <span><span className="mono" style={{ fontWeight: 600 }}>${m.tick}</span><span className="mut"> {m.state === 'void' ? 'void · refund' : 'settled ' + (m.outcome || '').toUpperCase()}</span></span>
-            <span className="mono mut"><Legs yes={p.yes} no={p.no} sep=" · " /></span>
-          </div>
-          <button className="btn solid-cur" onClick={() => claim(id)}>Claim {usd(claimAmt)}</button>
-        </div>,
-      )
-    else
-      rows.push(
-        <button key={id} className="pcard" onClick={() => open(id)}>
-          <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: 12 }}>
-            <span className="mono" style={{ fontWeight: 600 }}>${m.tick}</span>
-            <Badge m={m} />
-          </span>
-          <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{question(m)}</span>
-          <span className="mono" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: 12 }}>
-            <span><Legs yes={p.yes} no={p.no} sep=" · " /></span>
-            <span className={pl >= 0 ? 'c-yes' : 'c-no'}>{sgn(pl)}</span>
-          </span>
-        </button>,
-      )
-  }
+  const live = posRows().filter((r) => !r.settled), claimAmt = toClaim(), pv = pvNow(), plAll = pv - S.deposited
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }} data-x="pos">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <h2 className="h2">YOUR POSITIONS</h2>
-        <span className={'mono ' + (tot >= 0 ? 'c-yes' : 'c-no')} style={{ fontSize: 12 }}>{sgn(tot)}</span>
+        <h2 className="h2">YOUR PORTFOLIO</h2>
+        <button className="hlink" onClick={() => { navigate('/portfolio'); window.scrollTo(0, 0) }}>View all →</button>
       </div>
-      {rows.length ? rows : <div className="empty" style={{ padding: 16, fontSize: 13 }}>No open positions yet.</div>}
+      <div className="pcard" style={{ gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span className="lbl">Portfolio</span>
+            <b className="mono" style={{ fontSize: 20, fontWeight: 500 }}>{usd(pv)}</b>
+            <span className={'mono ' + (plAll >= 0 ? 'c-yes' : 'c-no')} style={{ fontSize: 11 }}>{sgn(plAll)} all time</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <span className="lbl">Available</span>
+            <b className="mono" style={{ fontSize: 14, fontWeight: 500 }}>{usd(S.bal)}</b>
+          </div>
+        </div>
+      </div>
+      {claimAmt > 0 && (
+        <button className="pcard pf-claimline" onClick={() => { portfolio.goToClaims(); navigate('/portfolio'); window.scrollTo(0, 0) }}>
+          <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <span style={{ fontSize: 13 }}><b className="c-cur">{usd(claimAmt)}</b> to claim from settled markets</span>
+            <span className="c-cur" style={{ fontWeight: 600, fontSize: 12 }}>Claim →</span>
+          </span>
+        </button>
+      )}
+      {live.length
+        ? live.sort((a, b) => b.value - a.value).slice(0, 4).map((r) => (
+          <button key={r.id + r.side} className="pcard" onClick={() => open(r.id)}>
+            <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: 12 }}>
+              <span className="mono" style={{ fontWeight: 600 }}>${r.m.tick} <span className={r.side === 'yes' ? 'c-yes' : 'c-no'}>{r.n} {r.side.toUpperCase()}</span></span>
+              <Badge m={r.m} />
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{question(r.m)}</span>
+            <span className="mono" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: 12 }}>
+              <span>{cents(r.avg)} → {cents(r.now)}</span>
+              <span className={r.pl >= 0 ? 'c-yes' : 'c-no'}>{sgn(r.pl)}</span>
+            </span>
+          </button>
+        ))
+        : <div className="empty" style={{ padding: 16, fontSize: 13 }}>No open positions yet.</div>}
     </section>
   )
 }

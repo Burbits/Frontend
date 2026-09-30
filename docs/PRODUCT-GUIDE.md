@@ -65,6 +65,18 @@ Limit buys hold their cost plus a **2% buffer**; the unused part is returned.
 
 Avoid: purple or indigo gradients, gradient text, glassmorphism, neon glows, emoji or icons in coloured circles as decoration, hero-plus-three-feature-cards layouts, untouched component-library defaults, the same rounded shadowed card everywhere, filler marketing copy, and made-up stats. Prefer real content, dense readable data, colour only where it carries meaning, and every product state designed (auction, live, full, halted, settled, void, empty, loading, errors).
 
+## Portfolio
+
+Laid out like Polymarket's profile page:
+
+- **Summary**: portfolio value (cash + money held in open orders + positions at today's price), all-time profit/loss against what was deposited, "available to trade", and **Deposit** / **Withdraw** buttons for USDC.
+- **Profit/Loss chart** with 5M / 15M / 1H / ALL ranges (demo ranges; the real app may use 1D / 1W / 1M / ALL). Deposits and withdrawals don't count as profit.
+- Three tabs:
+  - **Positions**: one row per side held (YES and NO of one market are separate rows), with average → current price, value and profit/loss. Search and sort included. Settled winnings to claim live here, with a "Claim all" banner. A lost position shows LOST, and a live one has a **Sell** button that opens the trade panel set to sell.
+  - **Open orders**, with Cancel all.
+  - **History**: every trade, order outcome (filled, cancelled, expired, refunded, rejected), merge, claim, deposit and withdrawal. It can be filtered by type, including "Failed & cancelled".
+- The home page's side panel shows a compact version: value, available, "$X to claim" and the top live positions.
+
 ## Mobile and PWA
 
 - Phones get a **labelled bottom tab bar** (Markets, Portfolio, How it works) and a sticky **Buy YES / Buy NO** bar on market pages.
