@@ -8,7 +8,7 @@
   `emit()` is called.
 */
 import { clamp, clock, cents, hash, hm, mmss, r2, rnd, usd } from './format'
-import type { Market, Order, Position, Quote, Side, Ticket, Toast, ToastAction, ToastKind, Trade } from './types'
+import type { Activity, ActivityKind, HistoryFilter, Market, Order, PortfolioTab, Position, PositionSort, Quote, Side, Ticket, Toast, ToastAction, ToastKind, Trade } from './types'
 
 export const U = 1 // one winning share pays $1 USDC
 export const SOLUSD = 150 // demo SOL price, to value the launchpad-side forcing cost in USDC
@@ -44,6 +44,10 @@ export const S = {
   markets: [] as Market[], pos: {} as Record<string, Position>, orders: [] as Order[], oid: 1, spawnAt: 200,
   heroIdx: 0, heroHold: 0, bookSide: 'yes' as Side,
   toasts: [] as Toast[], toastId: 1,
+  // portfolio
+  ptab: 'positions' as PortfolioTab, psearch: '', psort: 'value' as PositionSort, htype: 'all' as HistoryFilter, prange: 'all' as string,
+  act: [] as Activity[], pvHist: [] as { t: number; v: number }[], deposited: 0, walletUsdc: 250,
+  transfer: null as null | 'deposit' | 'withdraw',
 }
 export const T: Ticket = { act: 'buy', side: 'yes', tab: 'dollars', amount: '10', priceC: '28', shares: '100', exp: 'gtc', postOnly: false, review: false, err: '' }
 
@@ -154,6 +158,25 @@ export function init() {
   addOrder({ mid: 'gorp', side: 'yes', price: 0.26, shares: 100, guard: null, status: 'open' })
   addOrder({ mid: 'krill', side: 'yes', price: 0.07, shares: 150, guard: null, status: 'queued' })
   S.bal = 500 - (0.26 * 100 * U + 0.07 * 150 * U) * (1 + FEE.buffer)
+  // demo history: what this wallet did before the page opened
+  S.act = []; S.pvHist = []; S.walletUsdc = 250; S.ptab = 'positions'; S.psearch = ''; S.htype = 'all'
+  const pl0 = posRows().reduce((a, r) => a + r.pl, 0)
+  S.deposited = Math.round((pvNow() - pl0) * 100) / 100
+  const seed: [number, ActivityKind, string | null, string, number | null][] = [
+    [-1500, 'Deposit', null, 'Deposited from your wallet', S.deposited],
+    [-1180, 'Buy', 'hollow', 'Bought 50 YES at 20¢', -50 * 0.2],
+    [-1020, 'Buy', 'vanta', 'Bought 30 YES at 30¢', -30 * 0.3],
+    [-960, 'Rejected', 'zorb', 'Order rejected: price would fill right away (resting order only)', null],
+    [-900, 'Buy', 'zorb', 'Bought 80 YES at 35¢', -80 * 0.35],
+    [-600, 'Buy', 'plank', 'Bought 20 YES at 8¢', -20 * 0.08],
+    [-590, 'Buy', 'plank', 'Bought 20 NO at 92¢', -20 * 0.92],
+    [-420, 'Expired', 'spud', 'BUY 60 NO @ 45¢ expired unfilled', null],
+    [-300, 'Buy', 'spud', 'Bought 40 NO at 48¢', -40 * 0.48],
+    [70, 'Buy', 'gorp', 'Bought 120 YES at 22¢', -120 * 0.22],
+    [100, 'Order', 'gorp', 'Placed BUY 100 YES @ 26¢ (good \'til canceled)', null],
+    [125, 'Order', 'krill', 'Queued BUY 150 YES @ 7¢ for the opening auction', null],
+  ]
+  for (const [t, kind, mid, text, amt] of seed) S.act.unshift({ t, kind, mid, text, amt })
 }
 export const isBid = (o: Order) => (o.act !== 'sell') === (o.side === 'yes')
 function addOrder(o: Partial<Order> & Pick<Order, 'mid' | 'side' | 'price' | 'shares' | 'status'>) {
@@ -183,7 +206,9 @@ function refundOrders(m: Market, reason: string) {
   const back: string[] = []
   for (const o of S.orders) {
     if (o.mid !== m.id || !['open', 'partial', 'queued'].includes(o.status)) continue
-    back.push(release(o)); o.status = 'refunded'; o.note = reason
+    const lbl = o.act.toUpperCase() + ' ' + (o.shares - o.filled) + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price)
+    const r = release(o); back.push(r); o.status = 'refunded'; o.note = reason
+    logAct('Refunded', m.id, lbl + ' returned (' + reason + ')', o.act === 'sell' ? null : (o.shares - o.filled) * o.price * U * (1 + FEE.buffer))
   }
   if (back.length && S.wallet) toast(back.length + ' resting order' + (back.length > 1 ? 's' : '') + ' on $' + m.tick + ' cancelled by the halt: <span class="mono">' + back.join(', ') + '</span>.', 'mut')
 }
@@ -207,6 +232,7 @@ function uncross(m: Market) {
     if (n < o.shares) { o.status = 'filled'; o.note = 'rest refunded: market full' }
     m.oi = Math.min(cap(m) + 0.001, m.oi + n * U)
     m.trades.unshift({ t: S.t, side: o.side === 'yes' ? 'BUY YES' : 'BUY NO', p: px, n, kind: 'AUCTION', you: true })
+    logAct('Filled', m.id, 'Bought ' + n + ' ' + o.side.toUpperCase() + ' at ' + cents(px) + ' in the opening auction (+1% fee)', -(cost + f))
     if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + cents(p) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + cents(px) + '</span> (your limit was ' + cents(o.price) + '). Auction fee 1%: ' + usd(f) + '. Everything unused was returned.', 'info', { act: 'open', id: m.id, label: 'View market' })
   }
 }
@@ -242,6 +268,7 @@ export function payout(m: Market, p: Position | undefined) {
 function voidByGuard(o: Order, m: Market) {
   const back = release(o)
   const g = o.guard as [number, number]
+  logAct('Voided', m.id, o.act.toUpperCase() + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price) + ' voided by its guard', null)
   o.status = 'voided'; o.note = 'curve ' + m.pct.toFixed(1) + '% left ' + g[0] + '–' + g[1] + '%'
   if (S.wallet) toast('Order voided: $' + m.tick + '\'s curve moved to <span class="mono">' + m.pct.toFixed(1) + '%</span>, outside your ' + g[0] + '–' + g[1] + '% guard. Never filled: <span class="mono">' + back + '</span>.', 'cur')
 }
@@ -289,7 +316,7 @@ function processOrders() {
   for (const o of S.orders) {
     if (!['open', 'partial'].includes(o.status)) continue
     const m = mk(o.mid); if (!m || m.state !== 'live') continue
-    if (o.expireAt && S.t >= o.expireAt) { const back = release(o); o.status = 'expired'; if (S.wallet) toast('Your order on $' + m.tick + ' expired unfilled: <span class="mono">' + back + '</span>.', 'mut'); continue }
+    if (o.expireAt && S.t >= o.expireAt) { logAct('Expired', m.id, o.act.toUpperCase() + ' ' + (o.shares - o.filled) + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price) + ' expired unfilled', null); const back = release(o); o.status = 'expired'; if (S.wallet) toast('Your order on $' + m.tick + ' expired unfilled: <span class="mono">' + back + '</span>.', 'mut'); continue }
     if (o.guard && (m.pct < o.guard[0] || m.pct > o.guard[1])) { voidByGuard(o, m); continue }
     const yp = o.side === 'yes' ? o.price : r2(1 - o.price), bid = isBid(o)
     const near = bid ? (m.mid - yp <= 0.025) : (yp - m.mid <= 0.025)
@@ -316,6 +343,7 @@ function processOrders() {
     o.status = o.filled >= o.shares ? 'filled' : 'partial'
     m.volSol += n * o.price * U
     m.trades.unshift({ t: S.t, side: (o.act === 'sell' ? 'SELL ' : 'BUY ') + o.side.toUpperCase(), p: o.price, n, kind, you: true })
+    logAct('Filled', m.id, (o.act === 'sell' ? 'Sold ' : 'Bought ') + n + ' ' + o.side.toUpperCase() + ' at ' + cents(o.price) + ' (your limit order, ' + o.filled + '/' + o.shares + ')', (o.act === 'sell' ? 1 : -1) * n * o.price * U)
     if (S.wallet) toast('Your ' + o.act + ' order on $' + m.tick + ' filled <span class="mono">' + o.filled + '/' + o.shares + ' ' + o.side.toUpperCase() + '</span> at ' + cents(o.price) + (o.act === 'sell' ? ' (' + (kind === 'MERGE' ? 'merged with a ' + (o.side === 'yes' ? 'NO' : 'YES') + ' seller' : 'bought by another trader') + ')' : '') + '. Maker fee <span class="mono">' + usd(makerFeeOf(n, o.price)) + '</span> (waived at launch).', o.side === 'yes' ? 'yes' : 'no')
   }
 }
@@ -338,6 +366,7 @@ export function tick() {
   for (const m of S.markets) step(m)
   processOrders()
   if (S.t >= S.spawnAt) { spawn(); S.spawnAt = S.t + 90 }
+  samplePV()
   // featured carousel advances every 8 seconds unless the user just moved it
   if (S.t >= S.heroHold && S.t % 8 === 0) S.heroIdx = S.heroIdx + 1
   emit()
@@ -473,7 +502,7 @@ export function submit() {
   const m = mk(S.mid); if (!m) return
   T.review = false
   const err = validate(m)
-  if (err) { T.err = err; return emit() }
+  if (err) { T.err = err; logAct('Rejected', m.id, 'Order rejected: ' + err.replace(/\.$/, ''), null); return emit() }
   T.err = ''
   const q = quote(m), side = T.side, SIDE = side.toUpperCase()
   const expireAt = T.tab === 'limit' ? (T.exp === 'm5' ? S.t + 300 : T.exp === 'close' ? m.closeAt : null) : null
@@ -487,6 +516,7 @@ export function submit() {
     m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: q.p, n: q.n, kind: mint ? 'MINT' : 'TRANSFER', you: true })
     m.volSol += cost
     m.mid = r2(clamp(m.mid + (side === 'yes' ? 0.01 : -0.01), 0.02, 0.98))
+    logAct('Buy', m.id, 'Bought ' + q.n + ' ' + SIDE + ' at ' + cents(q.p) + ' (fee ' + usd(fee) + ')', -(cost + fee))
     toast('Bought <span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + '</span> at ' + cents(q.p) + ': ' + usd(cost) + ' + ' + usd(fee) + ' fee = ' + usd(cost + fee) + '. If ' + SIDE + ' wins you get <span class="mono">' + usd(q.n * U) + '</span>.', side === 'yes' ? 'yes' : 'no')
   } else if (T.tab !== 'limit') {
     if (m.state !== 'live') return
@@ -498,12 +528,14 @@ export function submit() {
       S.bal -= cost + fee
       const ps = P(m.id); if (side === 'yes') { ps.yes += q.n; ps.cy += cost + fee } else { ps.no += q.n; ps.cn += cost + fee }
       const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: 'filled' }); o.filled = q.n; o.note = 'filled right away at ' + cents(px)
+      logAct('Buy', m.id, 'Bought ' + q.n + ' ' + SIDE + ' at ' + cents(px) + ' (limit crossed the book, fee ' + usd(fee) + ')', -(cost + fee))
       m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: px, n: q.n, kind: capRoomPairs(m) >= q.n ? 'MINT' : 'TRANSFER', you: true })
       toast('Your limit crossed the book, so it filled right away at <span class="mono">' + cents(px) + '</span>, better than your ' + cents(q.p) + '.', 'info')
     } else {
       S.bal -= q.hold ?? 0
       const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: m.state === 'auction' ? 'queued' : 'open' })
       o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '')
+      logAct('Order', m.id, (m.state === 'auction' ? 'Queued ' : 'Placed ') + 'BUY ' + q.n + ' ' + SIDE + ' @ ' + cents(q.p) + ' (' + EXP[T.exp].toLowerCase() + ')', null)
       toast((m.state === 'auction' ? 'Queued for the auction: ' : 'Buy order resting on the book: ') + '<span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. ' + usd(q.hold ?? 0) + ' held until it fills (cost + 2% buffer).', 'info')
     }
   } else {
@@ -513,6 +545,7 @@ export function submit() {
       if (side === 'yes') { ps.yes -= q.n; ps.cy -= basis * q.n } else { ps.no -= q.n; ps.cn -= basis * q.n }
       const o = addOrder({ mid: m.id, act: 'sell', side, price: q.p, shares: q.n, guard: null, status: 'open', basis })
       o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '')
+      logAct('Order', m.id, 'Placed SELL ' + q.n + ' ' + SIDE + ' @ ' + cents(q.p) + ' (' + EXP[T.exp].toLowerCase() + ')', null)
       toast('Sell order resting on the book: <span class="mono">' + q.n + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. Your shares are held until it fills.', 'info')
     }
   }
@@ -528,6 +561,7 @@ function sellShares(m: Market, side: Side, n: number, lead?: string) {
   if (side === 'yes') { p.cy -= p.cy / p.yes * n; p.yes -= n } else { p.cn -= p.cn / p.no * n; p.no -= n }
   m.volSol += n * px * U
   m.trades.unshift({ t: S.t, side: 'SELL ' + side.toUpperCase(), p: px, n, kind: merge ? 'MERGE' : 'TRANSFER', you: true })
+  logAct('Sell', m.id, 'Sold ' + n + ' ' + side.toUpperCase() + ' at ' + cents(px) + ' (fee ' + usd(fee) + ')', got)
   toast((lead ? lead + ' ' : '') + 'Sold <span class="mono">' + n + ' ' + side.toUpperCase() + '</span> at ' + cents(px) + ' for <span class="mono">' + usd(got) + '</span> (' + (merge ? 'merged with a ' + (side === 'yes' ? 'NO' : 'YES') + ' seller: the pair was burned' : 'another trader bought them') + ').', 'info')
 }
 
@@ -541,11 +575,13 @@ export function merge() {
   p.yes -= n; p.no -= n; p.cy -= fy * n; p.cn -= fn * n
   S.bal += n * U; m.oi = Math.max(0, m.oi - n * U)
   m.trades.unshift({ t: S.t, side: 'MERGE', p: 1, n, kind: 'MERGE', you: true })
+  logAct('Merge', m.id, 'Merged ' + n + ' YES+NO pairs back into USDC', n * U)
   toast('Merged <span class="mono">' + n + '</span> YES+NO pairs back into <span class="mono">' + usd(n * U) + '</span>. Free, no fee.', 'info')
   emit()
 }
 export function cancel(id: number) {
   const o = S.orders.find((x) => x.id === id); if (!o) return
+  logAct('Cancelled', o.mid, 'Cancelled ' + o.act.toUpperCase() + ' ' + (o.shares - o.filled) + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price), null)
   const back = release(o); o.status = 'cancelled'
   toast('Order cancelled: <span class="mono">' + back + '</span>.', 'mut')
   emit()
@@ -554,6 +590,7 @@ export function claim(id: string, quiet = false) {
   const m = mk(id), p = S.pos[id]; if (!m || !p) return
   const pay = payout(m, p); if (pay <= 0) return
   S.bal += pay; p.claimed = true; p.claimedAmt = pay
+  logAct('Claim', id, (m.state === 'void' ? 'Redeemed voided shares' : 'Claimed winnings (' + (m.outcome || '').toUpperCase() + ')'), pay)
   if (!quiet) { toast('Claimed <span class="mono">' + usd(pay) + '</span> from $' + m.tick + '.', 'yes'); emit() }
 }
 export function claimAll() {
@@ -594,7 +631,7 @@ export const ticket = {
   },
   setExp(v: Ticket['exp']) { T.exp = v; emit() },
   setPostOnly(v: boolean) { T.postOnly = v; T.err = ''; emit() },
-  review() { const m0 = mk(S.mid); const err = m0 ? validate(m0) : ''; T.err = err; T.review = !err; emit() },
+  review() { const m0 = mk(S.mid); const err = m0 ? validate(m0) : ''; T.err = err; T.review = !err; if (err) logAct('Rejected', S.mid, 'Order rejected: ' + err.replace(/\.$/, ''), null); emit() },
   edit() { T.review = false; emit() },
   mobileBuy(v: Side) { T.side = v; T.act = 'buy'; T.tab = 'dollars'; T.review = false; emit() },
 }
@@ -612,10 +649,99 @@ export const ui = {
   closeDemo() { S.demo = false; emit() },
   openWallet() { S.walletOpen = true; emit() },
   closeWallet() { S.walletOpen = false; emit() },
-  connect(name: string) { S.wallet = name; S.walletOpen = false; toast('Connected ' + name + '. Demo wallet with $500 USDC on devnet; nothing real is touched.', 'yes'); emit() },
+  connect(name: string) { S.wallet = name; seedPV(); S.walletOpen = false; toast('Connected ' + name + '. Demo wallet with $500 USDC on devnet; nothing real is touched.', 'yes'); emit() },
   disconnect() { S.wallet = null; S.walletOpen = false; emit() },
   reset() { init(); toast('Demo reset.', 'mut'); emit() },
   spawnNow() { spawn(); emit() },
+}
+
+/* ---------- portfolio ---------- */
+/** Record something the user did; the History tab lists these newest first. */
+export function logAct(kind: ActivityKind, mid: string | null, text: string, amt: number | null) {
+  S.act.unshift({ t: S.t, kind, mid: mid || null, text, amt: amt == null ? null : amt })
+  if (S.act.length > 300) S.act.pop()
+}
+export const ACT_GROUP: Record<ActivityKind, 'transfers' | 'trades' | 'orders'> = { Deposit: 'transfers', Withdraw: 'transfers', Claim: 'transfers', Buy: 'trades', Sell: 'trades', Merge: 'trades', Filled: 'trades', Order: 'orders', Cancelled: 'orders', Expired: 'orders', Refunded: 'orders', Voided: 'orders', Rejected: 'orders' }
+export const ACT_BADGE: Record<ActivityKind, string> = { Deposit: 'b-live', Withdraw: 'b-mut', Claim: 'b-cur', Buy: 'b-live', Sell: 'b-mut', Merge: 'b-mut', Filled: 'b-live', Order: 'b-auc', Cancelled: 'b-mut', Expired: 'b-mut', Refunded: 'b-mut', Voided: 'b-cur', Rejected: 'b-no' }
+export const FAILED_KINDS: ActivityKind[] = ['Rejected', 'Cancelled', 'Expired', 'Refunded', 'Voided']
+export function heldInOrders() {
+  return S.orders.filter((o) => o.act !== 'sell' && ['open', 'partial', 'queued'].includes(o.status)).reduce((s, o) => s + (o.shares - o.filled) * o.price * U * (1 + FEE.buffer), 0)
+}
+export type PosRow = { m: Market; id: string; side: Side; n: number; avg: number; now: number; cost: number; value: number; pl: number; settled: boolean; won: boolean; claimable: number }
+/** One row per side held, like Polymarket: YES and NO of the same market are separate positions. */
+export function posRows(): PosRow[] {
+  const rows: PosRow[] = []
+  for (const id in S.pos) {
+    const m = mk(id), p = S.pos[id]
+    if (!m || p.claimed) continue
+    const settled = isSettled(m)
+    for (const side of ['yes', 'no'] as Side[]) {
+      const n = side === 'yes' ? p.yes : p.no
+      if (!n) continue
+      const cost = side === 'yes' ? p.cy : p.cn
+      const now = settled ? (m.state === 'void' ? 0.5 : (m.outcome === side ? 1 : 0)) : m.state === 'live' ? (side === 'yes' ? bestBid(m) : r2(1 - bestAsk(m))) : (side === 'yes' ? m.mid : r2(1 - m.mid))
+      const value = n * now * U
+      rows.push({ m, id, side, n, avg: cost / n / U, now, cost, value, pl: value - cost, settled, won: settled && (m.state === 'void' || m.outcome === side), claimable: settled ? payout(m, p) : 0 })
+    }
+  }
+  return rows
+}
+/** Cash + money held in open buy orders + positions at today's price. */
+export function pvNow() { return S.bal + heldInOrders() + posRows().reduce((s, r) => s + r.value, 0) }
+export function toClaim() { let s = 0; for (const id in S.pos) { const m = mk(id); if (m && isSettled(m)) s += payout(m, S.pos[id]) } return s }
+function samplePV() { if (S.wallet) { S.pvHist.push({ t: S.t, v: pvNow() }); if (S.pvHist.length > 4000) S.pvHist.shift() } }
+function seedPV() {
+  // give the chart a short history when a wallet connects (demo only)
+  const now = pvNow(), from = S.deposited
+  S.pvHist = []
+  for (let i = 0; i <= 120; i++) S.pvHist.push({ t: S.t - 120 + i, v: from + (now - from) * (i / 120) + (i && i < 120 ? rnd(-1.5, 1.5) : 0) })
+}
+export const PRANGE: [string, number][] = [['5m', 300], ['15m', 900], ['1h', 3600], ['all', Infinity]]
+export function plChart() {
+  const span = (PRANGE.find((r) => r[0] === S.prange) ?? PRANGE[3])[1]
+  const pts = S.pvHist.filter((p) => p.t >= S.t - span)
+  const W = 600, H = 120
+  if (pts.length < 2) return { d: '', area: '', pl: 0, W, H }
+  const t0 = pts[0].t, t1 = Math.max(pts[pts.length - 1].t, t0 + 1)
+  const lo = Math.min(...pts.map((p) => p.v)), hi = Math.max(...pts.map((p) => p.v)), rg = Math.max(1, hi - lo)
+  const X = (t: number) => ((t - t0) / (t1 - t0) * W).toFixed(1)
+  const Y = (v: number) => (H - 6 - (v - lo) / rg * (H - 12)).toFixed(1)
+  const d = pts.map((p) => X(p.t) + ',' + Y(p.v)).join(' ')
+  return { d, area: X(t0) + ',' + H + ' ' + d + ' ' + X(t1) + ',' + H, pl: pts[pts.length - 1].v - pts[0].v, W, H }
+}
+export const portfolio = {
+  setTab(v: PortfolioTab) { S.ptab = v; emit() },
+  setRange(v: string) { S.prange = v; emit() },
+  setHistory(v: HistoryFilter) { S.htype = v; emit() },
+  setSearch(v: string) { S.psearch = v; emit() },
+  setSort(v: PositionSort) { S.psort = v; emit() },
+  openTransfer(kind: 'deposit' | 'withdraw') { S.transfer = kind; emit() },
+  closeTransfer() { S.transfer = null; emit() },
+  /** Move USDC between the wallet and Burbit. Returns an error message, or '' when it went through. */
+  transfer(raw: string) {
+    const dep = S.transfer === 'deposit'
+    const amt = Math.round((parseFloat(raw) || 0) * 100) / 100
+    const max = dep ? S.walletUsdc : S.bal
+    const err = amt <= 0 ? 'Enter an amount.' : amt > max + 1e-9 ? (dep ? 'Your wallet only has ' + usd(max) + '.' : 'You can withdraw up to ' + usd(max) + '.') : ''
+    if (err) return err
+    if (dep) { S.walletUsdc -= amt; S.bal += amt; S.deposited += amt } else { S.walletUsdc += amt; S.bal -= amt; S.deposited -= amt }
+    logAct(dep ? 'Deposit' : 'Withdraw', null, (dep ? 'Deposited from ' : 'Withdrew to ') + S.wallet, dep ? amt : -amt)
+    S.transfer = null
+    toast((dep ? 'Deposited ' : 'Withdrew ') + '<span class="mono">' + usd(amt) + '</span> ' + (dep ? 'into Burbit.' : 'to your wallet.'), dep ? 'yes' : 'info')
+    samplePV()
+    emit()
+    return ''
+  },
+  maxTransfer() { return (S.transfer === 'deposit' ? S.walletUsdc : S.bal).toFixed(2) },
+  cancelAll() { S.orders.filter((o) => ['open', 'partial', 'queued'].includes(o.status)).forEach((o) => cancel(o.id)) },
+  goToClaims() { S.ptab = 'positions'; S.psort = 'settle'; emit() },
+  /** Open a market with the trade panel set to sell this position. */
+  sellPosition(id: string, side: Side) {
+    const m0 = mk(id)
+    T.act = 'sell'; T.side = side; T.tab = 'shares'; T.review = false
+    T.shares = String((m0 && held(m0, side)) || '')
+    emit()
+  },
 }
 
 /* ---------- demo controls (presentation only, not part of the product) ---------- */

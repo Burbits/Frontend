@@ -100,3 +100,10 @@ export type Ticket = {
 }
 
 export type Quote = { p: number; n: number; cost: number; fee: number; clip?: string; yesEq?: number; hold?: number }
+
+export type ActivityKind = 'Deposit' | 'Withdraw' | 'Claim' | 'Buy' | 'Sell' | 'Merge' | 'Filled' | 'Order' | 'Cancelled' | 'Expired' | 'Refunded' | 'Voided' | 'Rejected'
+/** One line of the portfolio's History tab. `amt` is the USDC change (negative = paid out). */
+export type Activity = { t: number; kind: ActivityKind; mid: string | null; text: string; amt: number | null }
+export type PortfolioTab = 'positions' | 'orders' | 'history'
+export type PositionSort = 'value' | 'pl' | 'settle' | 'name'
+export type HistoryFilter = 'all' | 'trades' | 'orders' | 'failed' | 'transfers'

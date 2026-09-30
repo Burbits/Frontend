@@ -240,6 +240,39 @@ h1,h2,h3,p{margin:0}
 @media (max-width:1180px){.hero{grid-template-columns:1fr}.movers{display:none}}
 @media (max-width:700px){.hmain{grid-template-columns:1fr}.hstats{grid-template-columns:repeat(2,minmax(0,1fr))}.hcard .hq{font-size:20px;line-height:26px}.hodds .big{font-size:40px;line-height:44px}}
 
+/* portfolio */
+.pf-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px}
+.pf-sum,.pf-pl{padding:18px 20px;display:flex;flex-direction:column;gap:14px;justify-content:space-between}
+.pf-row{display:flex;justify-content:space-between;gap:16px}
+.pf-row>div:not(.seg){display:flex;flex-direction:column;gap:2px}
+.pf-big{font-size:40px;line-height:46px;font-weight:500;font-variant-numeric:tabular-nums}
+.pf-mid{font-size:24px;line-height:30px;font-weight:500;font-variant-numeric:tabular-nums}
+.pf-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pf-btns .btn{height:44px;font-size:14px}
+.lbl .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+.pf-range{width:auto}
+.pf-range button{padding:0 10px}
+.pf-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pfs{display:flex;align-items:center;gap:8px;flex:1;min-width:180px;height:36px;padding:0 12px;background:var(--s1);border:1px solid var(--line2);border-radius:4px;color:var(--mut)}
+.pfs input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px}
+.pfs input::placeholder{color:var(--fnt)}
+.pf-sort select{height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:4px;background:var(--s1);font:500 13px var(--sans);color:var(--tx)}
+.posrow{display:grid;grid-template-columns:minmax(0,1.8fr) 110px 90px 100px 150px;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--s2);font-size:13px}
+.posrow:last-child{border-bottom:0}
+.posrow.hd{padding:8px 16px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--fnt);border-bottom:1px solid var(--line)}
+.posrow.claim{background:rgba(230,0,0,.04)}
+.posrow .mcell{align-items:flex-start}
+.posrow .meta{flex-wrap:wrap}
+.pm-only{display:none}
+.hrow{display:grid;grid-template-columns:70px 110px minmax(0,1fr) 100px;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--s2);font-size:13px}
+.hrow:last-child{border-bottom:0}
+.htext{min-width:0}
+.hlink{background:none;border:0;padding:0;color:var(--cur);font:600 12px var(--mono);cursor:pointer}
+.hlink:hover{text-decoration:underline}
+.pf-claimline{border-color:rgba(230,0,0,.3);background:rgba(230,0,0,.05)}
+@media (max-width:900px){.pf-top{grid-template-columns:1fr}.posrow{grid-template-columns:minmax(0,1fr) auto}.posrow>.h-m{display:none}.posrow.hd{display:none}.pm-only{display:flex;gap:12px;grid-column:1/-1;font-size:12px;color:var(--mut)}.hrow{grid-template-columns:60px minmax(0,1fr) auto}.hrow>span:nth-child(2){display:none}}
+@media (max-width:700px){.pf-big{font-size:32px;line-height:38px}.pf-claimbn{flex-wrap:wrap}.pf-claimbn .t{flex-basis:calc(100% - 90px)}.pf-claimbn .btn{width:100%}}
+
 /* market */
 .crumbs{font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center}
 .crumbs button{background:none;border:0;padding:0;color:var(--mut)}
@@ -468,7 +501,8 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ---------- state ---------- */
 const S = { t: 138, speed: 1, paused: false, view: 'feed', mid: null, filter: 'active', cat: 'all', q: '', explain: false, demo: false,
-  wallet: null, bal: 5, markets: [], pos: {}, orders: [], oid: 1, spawnAt: 200, lastTicketKey: '', xTipShown: false };
+  wallet: null, bal: 5, markets: [], pos: {}, orders: [], oid: 1, spawnAt: 200, lastTicketKey: '', xTipShown: false,
+  ptab: 'positions', psearch: '', psort: 'value', htype: 'all', prange: 'all', act: [], pvHist: [], deposited: 0, walletUsdc: 250, tkind: 'deposit' };
 const T = { act: 'buy', side: 'yes', tab: 'dollars', amount: '10', priceC: '28', shares: '100', exp: 'gtc', postOnly: false, review: false, guard: false, gmin: '75', gmax: '90', err: '' };
 
 function M(o) {
@@ -567,6 +601,25 @@ function init() {
   addOrder({ mid: 'gorp', side: 'yes', price: 0.26, shares: 100, guard: null, status: 'open' });
   addOrder({ mid: 'krill', side: 'yes', price: 0.07, shares: 150, guard: null, status: 'queued' });
   S.bal = 500 - (0.26 * 100 * U + 0.07 * 150 * U) * (1 + FEE.buffer);
+  // demo history: what this wallet did before the page opened
+  S.act = []; S.pvHist = []; S.walletUsdc = 250; S.ptab = 'positions'; S.psearch = ''; S.htype = 'all';
+  const pl0 = posRows().reduce((a, r) => a + r.pl, 0);
+  S.deposited = Math.round((pvNow() - pl0) * 100) / 100;
+  const seed = [
+    [-1500, 'Deposit', null, 'Deposited from your wallet', S.deposited],
+    [-1180, 'Buy', 'hollow', 'Bought 50 YES at 20¢', -50 * 0.2],
+    [-1020, 'Buy', 'vanta', 'Bought 30 YES at 30¢', -30 * 0.3],
+    [-960, 'Rejected', 'zorb', 'Order rejected: price would fill right away (resting order only)', null],
+    [-900, 'Buy', 'zorb', 'Bought 80 YES at 35¢', -80 * 0.35],
+    [-600, 'Buy', 'plank', 'Bought 20 YES at 8¢', -20 * 0.08],
+    [-590, 'Buy', 'plank', 'Bought 20 NO at 92¢', -20 * 0.92],
+    [-420, 'Expired', 'spud', 'BUY 60 NO @ 45¢ expired unfilled', null],
+    [-300, 'Buy', 'spud', 'Bought 40 NO at 48¢', -40 * 0.48],
+    [70, 'Buy', 'gorp', 'Bought 120 YES at 22¢', -120 * 0.22],
+    [100, 'Order', 'gorp', 'Placed BUY 100 YES @ 26¢ (good \'til canceled)', null],
+    [125, 'Order', 'krill', 'Queued BUY 150 YES @ 7¢ for the opening auction', null],
+  ];
+  for (const [t, kind, mid, text, amt] of seed) S.act.unshift({ t, kind, mid, text, amt });
 }
 const isBid = (o) => (o.act !== 'sell') === (o.side === 'yes');
 function addOrder(o) {
@@ -599,7 +652,9 @@ function refundOrders(m, reason) {
   const back = [];
   for (const o of S.orders) {
     if (o.mid !== m.id || !['open', 'partial', 'queued'].includes(o.status)) continue;
-    back.push(release(o)); o.status = 'refunded'; o.note = reason;
+    const lbl = o.act.toUpperCase() + ' ' + (o.shares - o.filled) + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price);
+    const r = release(o); back.push(r); o.status = 'refunded'; o.note = reason;
+    logAct('Refunded', m.id, lbl + ' returned (' + reason + ')', o.act === 'sell' ? null : (o.shares - o.filled) * o.price * U * (1 + FEE.buffer));
   }
   if (back.length && S.wallet) toast(back.length + ' resting order' + (back.length > 1 ? 's' : '') + ' on $' + m.tick + ' cancelled by the halt: <span class="mono">' + back.join(', ') + '</span>.', 'mut');
 }
@@ -623,6 +678,7 @@ function uncross(m) {
     if (n < o.shares) { o.status = 'filled'; o.note = 'rest refunded: market full'; }
     m.oi = Math.min(cap(m) + 0.001, m.oi + n * U);
     m.trades.unshift({ t: S.t, side: o.side === 'yes' ? 'BUY YES' : 'BUY NO', p: px, n, kind: 'AUCTION', you: true });
+    logAct('Filled', m.id, 'Bought ' + n + ' ' + o.side.toUpperCase() + ' at ' + cents(px) + ' in the opening auction (+1% fee)', -(cost + f));
     if (S.wallet) toast('Auction on $' + m.tick + ' cleared at <span class="mono">' + cents(p) + '</span>. Your ' + n + ' ' + o.side.toUpperCase() + ' filled at the clearing price <span class="mono">' + cents(px) + '</span> (your limit was ' + cents(o.price) + '). Auction fee 1%: ' + usd(f) + '. Everything unused was returned.', 'info', { act: 'open', id: m.id, label: 'View market' });
   }
 }
@@ -657,6 +713,7 @@ function payout(m, p) {
 }
 function voidByGuard(o, m) {
   const back = release(o);
+  logAct('Voided', m.id, o.act.toUpperCase() + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price) + ' voided by its guard', null);
   o.status = 'voided'; o.note = 'curve ' + m.pct.toFixed(1) + '% left ' + o.guard[0] + '–' + o.guard[1] + '%';
   if (S.wallet) toast('Order voided: $' + m.tick + '\'s curve moved to <span class="mono">' + m.pct.toFixed(1) + '%</span>, outside your ' + o.guard[0] + '–' + o.guard[1] + '% guard. Never filled: <span class="mono">' + back + '</span>.', 'cur');
 }
@@ -706,7 +763,7 @@ function processOrders() {
   for (const o of S.orders) {
     if (!['open', 'partial'].includes(o.status)) continue;
     const m = mk(o.mid); if (!m || m.state !== 'live') continue;
-    if (o.expireAt && S.t >= o.expireAt) { const back = release(o); o.status = 'expired'; if (S.wallet) toast('Your order on $' + m.tick + ' expired unfilled: <span class="mono">' + back + '</span>.', 'mut'); continue; }
+    if (o.expireAt && S.t >= o.expireAt) { logAct('Expired', m.id, o.act.toUpperCase() + ' ' + (o.shares - o.filled) + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price) + ' expired unfilled', null); const back = release(o); o.status = 'expired'; if (S.wallet) toast('Your order on $' + m.tick + ' expired unfilled: <span class="mono">' + back + '</span>.', 'mut'); continue; }
     if (o.guard && (m.pct < o.guard[0] || m.pct > o.guard[1])) { voidByGuard(o, m); continue; }
     const yp = o.side === 'yes' ? o.price : r2(1 - o.price), bid = isBid(o);
     const near = bid ? (m.mid - yp <= 0.025) : (yp - m.mid <= 0.025);
@@ -732,6 +789,7 @@ function processOrders() {
     o.status = o.filled >= o.shares ? 'filled' : 'partial';
     m.volSol += n * o.price * U;
     m.trades.unshift({ t: S.t, side: (o.act === 'sell' ? 'SELL ' : 'BUY ') + o.side.toUpperCase(), p: o.price, n, kind, you: true });
+    logAct('Filled', m.id, (o.act === 'sell' ? 'Sold ' : 'Bought ') + n + ' ' + o.side.toUpperCase() + ' at ' + cents(o.price) + ' (your limit order, ' + o.filled + '/' + o.shares + ')', (o.act === 'sell' ? 1 : -1) * n * o.price * U);
     if (S.wallet) toast('Your ' + o.act + ' order on $' + m.tick + ' filled <span class="mono">' + o.filled + '/' + o.shares + ' ' + o.side.toUpperCase() + '</span> at ' + cents(o.price) + (o.act === 'sell' ? ' (' + (kind === 'MERGE' ? 'merged with a ' + (o.side === 'yes' ? 'NO' : 'YES') + ' seller' : 'bought by another trader') + ')' : '') + '. Maker fee <span class="mono">' + usd(makerFeeOf(n, o.price)) + '</span> (waived at launch).', o.side === 'yes' ? 'yes' : 'no');
   }
 }
@@ -753,6 +811,7 @@ function tick() {
   for (const m of S.markets) step(m);
   processOrders();
   if (S.t >= S.spawnAt) { spawn(); S.spawnAt = S.t + 90; }
+  samplePV();
   refresh();
 }
 let timer = null;
@@ -968,21 +1027,6 @@ function posValue(m, p) {
   if (!isOpen(m) && m.state !== 'halted') return payout(m, p);
   if (m.state === 'auction' || m.state === 'halted') return p.yes * m.mid * U + p.no * (1 - m.mid) * U;
   return p.yes * bestBid(m) * U + p.no * (1 - bestAsk(m)) * U;
-}
-function sidePositions() {
-  if (!S.wallet) return '<section style="display:flex;flex-direction:column;gap:12px"><h2 class="h2">YOUR POSITIONS</h2><div class="pcard" style="gap:10px"><span class="mut" style="font-size:13px">Connect a wallet to see positions and trade.</span><button class="btn solid-tx" data-act="wallet">Connect wallet</button></div></section>';
-  let h = '', tot = 0;
-  for (const id in S.pos) {
-    const m = mk(id), p = S.pos[id]; if (!m || p.claimed || p.yes + p.no === 0) continue;
-    if ((m.state === 'resolved' || m.state === 'void') && payout(m, p) === 0) continue;
-    const val = posValue(m, p), cost = p.cy + p.cn, pl = val - cost; tot += pl;
-    const claim = (m.state === 'resolved' || m.state === 'void') ? payout(m, p) : 0;
-    const legs = (p.yes ? '<span class="c-yes">' + p.yes + ' YES</span>' : '') + (p.yes && p.no ? ' · ' : '') + (p.no ? '<span class="c-no">' + p.no + ' NO</span>' : '');
-    if (claim > 0) h += '<div class="pcard" style="flex-direction:row;align-items:center;justify-content:space-between;background:rgba(230,0,0,.07);border-color:rgba(230,0,0,.3)"><div style="display:flex;flex-direction:column;gap:2px;font-size:12px"><span><span class="mono" style="font-weight:600">$' + m.tick + '</span><span class="mut"> ' + (m.state === 'void' ? 'void · refund' : 'settled ' + m.outcome.toUpperCase()) + '</span></span><span class="mono mut">' + legs + '</span></div><button class="btn solid-cur" data-act="claim" data-id="' + id + '">Claim ' + usd(claim) + '</button></div>';
-    else h += '<button class="pcard" data-act="open" data-id="' + id + '"><span style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span class="mono" style="font-weight:600">$' + m.tick + '</span>' + badge(m) + '</span><span style="font-size:13px;color:var(--tx2)">' + question(m) + '</span><span class="mono" style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span>' + legs + '</span><span class="' + (pl >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(pl) + '</span></span></button>';
-  }
-  if (!h) h = '<div class="empty" style="padding:16px;font-size:13px">No open positions yet.</div>';
-  return '<section style="display:flex;flex-direction:column;gap:12px" data-x="pos"><div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="h2">YOUR POSITIONS</h2><span class="mono ' + (tot >= 0 ? 'c-yes' : 'c-no') + '" style="font-size:12px">' + sgn(tot) + '</span></div>' + h + '</section>';
 }
 function sideSettled() {
   const done = S.markets.filter((m) => m.state === 'resolved' || m.state === 'void').sort((a, b) => (b.resT || 0) - (a.resT || 0)).slice(0, 5);
@@ -1293,7 +1337,7 @@ function submit() {
   const m = mk(S.mid); if (!m) return;
   T.review = false;
   const err = validate(m);
-  if (err) { T.err = err; return refresh(); }
+  if (err) { T.err = err; logAct('Rejected', m.id, 'Order rejected: ' + err.replace(/\.$/, ''), null); return refresh(); }
   T.err = '';
   const q = quote(m), side = T.side, SIDE = side.toUpperCase();
   const expireAt = T.tab === 'limit' ? (T.exp === 'm5' ? S.t + 300 : T.exp === 'close' ? m.closeAt : null) : null;
@@ -1307,6 +1351,7 @@ function submit() {
     m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: q.p, n: q.n, kind: mint ? 'MINT' : 'TRANSFER', you: true });
     m.volSol += cost;
     m.mid = r2(clamp(m.mid + (side === 'yes' ? 0.01 : -0.01), 0.02, 0.98));
+    logAct('Buy', m.id, 'Bought ' + q.n + ' ' + SIDE + ' at ' + cents(q.p) + ' (fee ' + usd(fee) + ')', -(cost + fee));
     toast('Bought <span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + '</span> at ' + cents(q.p) + ': ' + usd(cost) + ' + ' + usd(fee) + ' fee = ' + usd(cost + fee) + '. If ' + SIDE + ' wins you get <span class="mono">' + usd(q.n * U) + '</span>.', side === 'yes' ? 'yes' : 'no');
   } else if (T.tab !== 'limit') {
     if (m.state !== 'live') return;
@@ -1318,12 +1363,14 @@ function submit() {
       S.bal -= cost + fee;
       const ps = P(m.id); if (side === 'yes') { ps.yes += q.n; ps.cy += cost + fee; } else { ps.no += q.n; ps.cn += cost + fee; }
       const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: 'filled' }); o.filled = q.n; o.note = 'filled right away at ' + cents(px);
+      logAct('Buy', m.id, 'Bought ' + q.n + ' ' + SIDE + ' at ' + cents(px) + ' (limit crossed the book, fee ' + usd(fee) + ')', -(cost + fee));
       m.trades.unshift({ t: S.t, side: 'BUY ' + SIDE, p: px, n: q.n, kind: capRoomPairs(m) >= q.n ? 'MINT' : 'TRANSFER', you: true });
       toast('Your limit crossed the book, so it filled right away at <span class="mono">' + cents(px) + '</span>, better than your ' + cents(q.p) + '.', 'info');
     } else {
       S.bal -= q.hold;
       const o = addOrder({ mid: m.id, side, price: q.p, shares: q.n, guard: null, status: m.state === 'auction' ? 'queued' : 'open' });
       o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '');
+      logAct('Order', m.id, (m.state === 'auction' ? 'Queued ' : 'Placed ') + 'BUY ' + q.n + ' ' + SIDE + ' @ ' + cents(q.p) + ' (' + EXP[T.exp].toLowerCase() + ')', null);
       toast((m.state === 'auction' ? 'Queued for the auction: ' : 'Buy order resting on the book: ') + '<span class="mono">' + q.n.toLocaleString('en-US') + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. ' + usd(q.hold) + ' held until it fills (cost + 2% buffer).', 'info');
     }
   } else {
@@ -1333,6 +1380,7 @@ function submit() {
       if (side === 'yes') { ps.yes -= q.n; ps.cy -= basis * q.n; } else { ps.no -= q.n; ps.cn -= basis * q.n; }
       const o = addOrder({ mid: m.id, act: 'sell', side, price: q.p, shares: q.n, guard: null, status: 'open', basis });
       o.expireAt = expireAt; o.note = EXP[T.exp].toLowerCase() + (T.postOnly ? ' · resting only' : '');
+      logAct('Order', m.id, 'Placed SELL ' + q.n + ' ' + SIDE + ' @ ' + cents(q.p) + ' (' + EXP[T.exp].toLowerCase() + ')', null);
       toast('Sell order resting on the book: <span class="mono">' + q.n + ' ' + SIDE + ' at ' + cents(q.p) + '</span>. Your shares are held until it fills.', 'info');
     }
   }
@@ -1340,33 +1388,165 @@ function submit() {
 }
 
 /* ---------- portfolio ---------- */
-function renderPort() {
-  if (!S.wallet) { $('#view').innerHTML = '<h1 class="px" style="font-size:26px">PORTFOLIO</h1><div class="empty">Connect a wallet to see your positions, orders and winnings.<div style="margin-top:14px"><button class="btn solid-tx" data-act="wallet">Connect wallet</button></div></div>'; return; }
-  let claimTot = 0, openVal = 0, pl = 0;
-  const claimRows = [], openRows = [], doneRows = [];
+// Everything the user did, newest first: trades, orders (placed, filled, failed), transfers and claims.
+function logAct(kind, mid, text, amt) {
+  S.act.unshift({ t: S.t, kind, mid: mid || null, text, amt: amt == null ? null : amt });
+  if (S.act.length > 300) S.act.pop();
+}
+const ACT_GROUP = { Deposit: 'transfers', Withdraw: 'transfers', Claim: 'transfers', Buy: 'trades', Sell: 'trades', Merge: 'trades', Filled: 'trades', Order: 'orders', Cancelled: 'orders', Expired: 'orders', Refunded: 'orders', Voided: 'orders', Rejected: 'orders' };
+const ACT_BADGE = { Deposit: 'b-live', Withdraw: 'b-mut', Claim: 'b-cur', Buy: 'b-live', Sell: 'b-mut', Merge: 'b-mut', Filled: 'b-live', Order: 'b-auc', Cancelled: 'b-mut', Expired: 'b-mut', Refunded: 'b-mut', Voided: 'b-cur', Rejected: 'b-no' };
+function heldInOrders() { return S.orders.filter((o) => o.act !== 'sell' && ['open', 'partial', 'queued'].includes(o.status)).reduce((s, o) => s + (o.shares - o.filled) * o.price * U * (1 + FEE.buffer), 0); }
+function posRows() {
+  // one row per side you hold, like Polymarket: YES and NO of the same market are separate positions
+  const rows = [];
   for (const id in S.pos) {
-    const m = mk(id), p = S.pos[id]; if (!m || p.yes + p.no === 0) continue;
-    const legs = (p.yes ? '<span class="c-yes">' + p.yes + ' YES</span>' : '') + (p.yes && p.no ? ' + ' : '') + (p.no ? '<span class="c-no">' + p.no + ' NO</span>' : '');
-    const cost = p.cy + p.cn;
-    const name = '<button class="mcell" data-act="open" data-id="' + id + '">' + ident(m, 28) + '<span style="display:flex;flex-direction:column;min-width:0"><span class="meta"><span class="tk">$' + m.tick + '</span>' + typeTag(m) + '</span><span class="q" style="font-size:13px">' + question(m) + '</span></span></button>';
-    if ((m.state === 'resolved' || m.state === 'void') && !p.claimed) {
-      const pay = payout(m, p); claimTot += pay; pl += pay - cost;
-      (pay > 0 ? claimRows : doneRows).push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right">' + (pay > 0 ? '<button class="btn solid-cur" data-act="claim" data-id="' + id + '">' + (m.state === 'void' ? 'Redeem ' : 'Claim ') + usd(pay) + '</button>' : '<span class="mono c-no">' + sgn(-cost) + '</span>') + '</span></div>');
-    } else if (p.claimed) {
-      doneRows.push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + '</span><span class="h-m">' + badge(m) + '</span><span class="right mono mut">claimed ' + usd(p.claimedAmt) + '</span></div>');
-    } else {
-      const v = posValue(m, p); openVal += v; pl += v - cost;
-      openRows.push('<div class="prow">' + name + '<span class="mono h-m">' + legs + '</span><span class="mono h-m">' + usd(cost) + ' → ' + usd(v) + '</span><span class="h-m">' + badge(m) + '</span><span class="right mono ' + (v - cost >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(v - cost) + '</span></div>');
+    const m = mk(id), p = S.pos[id]; if (!m || p.claimed) continue;
+    const settled = m.state === 'resolved' || m.state === 'void';
+    for (const side of ['yes', 'no']) {
+      const n = side === 'yes' ? p.yes : p.no; if (!n) continue;
+      const cost = side === 'yes' ? p.cy : p.cn;
+      const now = settled ? (m.state === 'void' ? 0.5 : (m.outcome === side ? 1 : 0)) : m.state === 'live' ? (side === 'yes' ? bestBid(m) : r2(1 - bestAsk(m))) : (side === 'yes' ? m.mid : r2(1 - m.mid));
+      const value = n * now * U;
+      rows.push({ m, id, side, n, avg: cost / n / U, now, cost, value, pl: value - cost, settled, won: settled && (m.state === 'void' || m.outcome === side), claimable: settled ? payout(m, p) : 0 });
     }
   }
-  const hd = (a, b, c, d, e) => '<div class="prow hd"><span>' + a + '</span><span class="h-m">' + b + '</span><span class="h-m">' + c + '</span><span class="h-m">' + d + '</span><span style="text-align:right">' + e + '</span></div>';
-  const ords = S.orders;
-  let h = '<div class="feed-head" data-x="portfolio"><div><h1>PORTFOLIO</h1><p>Your shares, orders and winnings across every market.</p></div><div class="kpis"><div><b>' + usd(S.bal) + '</b><span>USDC free</span></div><div><b>' + usd(openVal) + '</b><span>in open positions</span></div><div><b class="c-cur">' + usd(claimTot) + '</b><span>to claim</span></div></div></div>';
-  if (claimRows.length) h += '<section style="display:flex;flex-direction:column;gap:10px"><div class="sec-h"><h2 class="h2 c-cur">READY TO CLAIM</h2><button class="btn solid-cur" data-act="claimall">Claim all · ' + usd(claimTot) + '</button></div><div class="ptable">' + hd('Market', 'Shares', 'Cost', 'Result', 'Payout') + claimRows.join('') + '</div></section>';
-  h += '<section style="display:flex;flex-direction:column;gap:10px"><h2 class="h2">OPEN POSITIONS</h2>' + (openRows.length ? '<div class="ptable">' + hd('Market', 'Shares', 'Cost → value', 'State', 'P&L') + openRows.join('') + '</div>' : '<div class="empty">No open positions.</div>') + '</section>';
-  h += '<section style="display:flex;flex-direction:column;gap:10px" data-x="orders"><h2 class="h2">ORDERS</h2>' + (ords.length ? '<div class="panel" style="padding:4px 16px"><div class="olist">' + ords.map(orderRow).join('') + '</div></div>' : '<div class="empty">No orders yet.</div>') + '</section>';
-  if (doneRows.length) h += '<section style="display:flex;flex-direction:column;gap:10px"><h2 class="h2">HISTORY</h2><div class="ptable">' + hd('Market', 'Shares', 'Cost', 'Result', 'Outcome') + doneRows.join('') + '</div></section>';
+  return rows;
+}
+function pvNow() { return S.bal + heldInOrders() + posRows().reduce((s, r) => s + r.value, 0); }
+function toClaim() { let s = 0; for (const id in S.pos) { const m = mk(id); if (m && (m.state === 'resolved' || m.state === 'void')) s += payout(m, S.pos[id]); } return s; }
+function samplePV() { if (S.wallet) { S.pvHist.push({ t: S.t, v: pvNow() }); if (S.pvHist.length > 4000) S.pvHist.shift(); } }
+function seedPV() {
+  // give the chart a short history when a wallet connects (demo only)
+  const now = pvNow(), from = S.deposited;
+  S.pvHist = [];
+  for (let i = 0; i <= 120; i++) S.pvHist.push({ t: S.t - 120 + i, v: from + (now - from) * (i / 120) + (i && i < 120 ? rnd(-1.5, 1.5) : 0) });
+}
+const PRANGE = [['5m', 300], ['15m', 900], ['1h', 3600], ['all', Infinity]];
+function plChart() {
+  const span = PRANGE.find((r) => r[0] === S.prange)[1];
+  const pts = S.pvHist.filter((p) => p.t >= S.t - span);
+  if (pts.length < 2) return { d: '', area: '', pl: 0 };
+  const W = 600, H = 120, t0 = pts[0].t, t1 = Math.max(pts[pts.length - 1].t, t0 + 1);
+  const lo = Math.min(...pts.map((p) => p.v)), hi = Math.max(...pts.map((p) => p.v)), rg = Math.max(1, hi - lo);
+  const X = (t) => ((t - t0) / (t1 - t0) * W).toFixed(1), Y = (v) => (H - 6 - (v - lo) / rg * (H - 12)).toFixed(1);
+  const d = pts.map((p) => X(p.t) + ',' + Y(p.v)).join(' ');
+  return { d, area: X(t0) + ',' + H + ' ' + d + ' ' + X(t1) + ',' + H, pl: pts[pts.length - 1].v - pts[0].v, W, H };
+}
+function renderPort() {
+  if (!S.wallet) { $('#view').innerHTML = '<h1 class="px" style="font-size:26px">PORTFOLIO</h1><div class="empty">Connect a wallet to see your positions, orders and history.<div style="margin-top:14px"><button class="btn solid-tx" data-act="wallet">Connect wallet</button></div></div>'; return; }
+  const refocus = document.activeElement && document.activeElement.id === 'psearch';
+  const pv = pvNow(), plAll = pv - S.deposited, held = heldInOrders(), claimAmt = toClaim();
+  const ch = plChart();
+  const openOrders = S.orders.filter((o) => ['open', 'partial', 'queued'].includes(o.status));
+  let rows = posRows();
+  const q = S.psearch.trim().toLowerCase();
+  if (q) rows = rows.filter((r) => (r.m.tick + ' ' + r.m.name + ' ' + question(r.m) + ' ' + r.side).toLowerCase().includes(q));
+  const sorters = { value: (a, b) => b.value - a.value, pl: (a, b) => b.pl - a.pl, name: (a, b) => question(a.m).localeCompare(question(b.m)), settle: (a, b) => (b.claimable > 0) - (a.claimable > 0) || b.value - a.value };
+  rows.sort(sorters[S.psort]);
+
+  let h = '<h1 class="px" style="font-size:26px">PORTFOLIO</h1>';
+  // summary + P/L
+  h += '<div class="pf-top">' +
+    '<section class="panel pf-sum" data-x="portfolio">' +
+      '<div class="pf-row"><div><span class="lbl">Portfolio</span><b class="pf-big mono">' + usd(pv) + '</b><span class="mono ' + (plAll >= 0 ? 'c-yes' : 'c-no') + '" style="font-size:12px">' + sgn(plAll) + ' (' + (S.deposited ? (plAll >= 0 ? '+' : '−') + Math.abs(plAll / S.deposited * 100).toFixed(1) : '0.0') + '%) all time</span></div>' +
+      '<div style="text-align:right"><span class="lbl">Available to trade</span><b class="pf-mid mono">' + usd(S.bal) + '</b>' + (held > 0 ? '<span class="mut mono" style="font-size:12px">' + usd(held) + ' held in orders</span>' : '') + '</div></div>' +
+      '<div class="pf-btns"><button class="btn solid-cur" data-act="transfer-open" data-v="deposit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>Deposit</button><button class="btn" data-act="transfer-open" data-v="withdraw"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M5 20h14"/></svg>Withdraw</button></div>' +
+    '</section>' +
+    '<section class="panel pf-pl" data-x="pl">' +
+      '<div class="pf-row" style="align-items:flex-start"><div><span class="lbl"><i class="dot" style="background:' + (ch.pl >= 0 ? 'var(--yes)' : 'var(--no)') + '"></i>Profit/Loss</span><b class="pf-mid mono ' + (ch.pl >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(ch.pl) + '</b><span class="mut" style="font-size:12px">' + clock(BASE + S.t) + ' · ' + (S.prange === 'all' ? 'since you connected' : 'last ' + S.prange) + '</span></div>' +
+      '<div class="seg pf-range" role="group" aria-label="Chart range">' + PRANGE.map(([k]) => '<button data-act="prange" data-v="' + k + '" aria-pressed="' + (S.prange === k) + '">' + k.toUpperCase() + '</button>').join('') + '</div></div>' +
+      (ch.d ? '<svg width="100%" height="120" viewBox="0 0 ' + ch.W + ' ' + ch.H + '" preserveAspectRatio="none" role="img" aria-label="Portfolio value over time" style="display:block"><polygon points="' + ch.area + '" fill="' + (ch.pl >= 0 ? 'rgba(11,143,80,0.10)' : 'rgba(37,99,235,0.10)') + '"/><polyline points="' + ch.d + '" fill="none" stroke="' + (ch.pl >= 0 ? '#0B8F50' : '#2563EB') + '" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>' : '<div class="empty" style="padding:30px;font-size:12px">Not enough history yet.</div>') +
+    '</section></div>';
+
+  // tabs
+  const tabs = [['positions', 'Positions', rows.length], ['orders', 'Open orders', openOrders.length], ['history', 'History', S.act.length]];
+  h += '<nav class="cats pf-tabs" aria-label="Portfolio sections">' + tabs.map(([k, l, n]) => '<button data-act="ptab" data-v="' + k + '" aria-pressed="' + (S.ptab === k) + '">' + l + ' <span class="mono fnt" style="font-size:11px">' + n + '</span></button>').join('') + '</nav>';
+
+  if (S.ptab === 'positions') {
+    if (claimAmt > 0) h += '<div class="banner bn-cur pf-claimbn" data-x="claims"><span class="badge b-cur"><i></i>TO CLAIM</span><span class="t"><strong>' + usd(claimAmt) + ' from settled markets.</strong> Winning shares pay $1 each; voided markets return 50¢ per share. Claim a row below, or all at once.</span><button class="btn solid-cur" data-act="claimall">Claim all · ' + usd(claimAmt) + '</button></div>';
+    h += '<div class="pf-tools"><label class="pfs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="sr">Search positions</span><input id="psearch" type="search" placeholder="Search positions" value="' + S.psearch + '"></label>' +
+      '<label class="pf-sort"><span class="sr">Sort positions</span><select id="psort">' + [['value', 'Current value'], ['pl', 'Profit/Loss'], ['settle', 'Ready to claim first'], ['name', 'Market name']].map(([k, l]) => '<option value="' + k + '"' + (S.psort === k ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></label></div>';
+    if (!rows.length) h += '<div class="empty">' + (q ? 'No positions match "' + S.psearch + '".' : 'No positions yet. Buy YES or NO on any market and it shows up here.') + '</div>';
+    else {
+      h += '<div class="ptable"><div class="posrow hd"><span>Market</span><span class="h-m">Avg → now</span><span class="h-m" style="text-align:right">Value</span><span class="h-m" style="text-align:right">Profit/Loss</span><span style="text-align:right">&nbsp;</span></div>';
+      for (const r of rows) {
+        const m = r.m, sideC = r.side === 'yes' ? 'c-yes' : 'c-no';
+        let action;
+        if (r.settled) action = r.won && r.claimable > 0 ? '<button class="btn solid-cur" data-act="claim" data-id="' + r.id + '">' + (m.state === 'void' ? 'Redeem ' : 'Claim ') + usd(r.claimable) + '</button>' : '<span class="badge b-mut"><i></i>LOST</span>';
+        else if (m.state === 'live') action = '<button class="btn" data-act="sellpos" data-id="' + r.id + '" data-v="' + r.side + '">Sell</button>';
+        else action = '<span class="mut" style="font-size:12px">' + (m.state === 'auction' ? 'In auction' : 'Settling…') + '</span>';
+        h += '<div class="posrow' + (r.claimable > 0 && r.won ? ' claim' : '') + '">' +
+          '<button class="mcell" data-act="open" data-id="' + r.id + '">' + ident(m, 32) + '<span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span class="q" style="font-size:14px;white-space:normal">' + question(m) + '</span><span class="meta" style="font-size:12px"><span class="' + sideC + ' mono" style="font-weight:600">' + r.n.toLocaleString('en-US') + ' ' + r.side.toUpperCase() + '</span>' + badge(m) + srcMark(m) + '</span></span></button>' +
+          '<span class="mono h-m" style="font-size:13px">' + cents(r.avg) + ' → <b>' + cents(r.now) + '</b></span>' +
+          '<span class="mono h-m" style="text-align:right;font-size:13px">' + usd(r.value) + '</span>' +
+          '<span class="mono h-m ' + (r.pl >= 0 ? 'c-yes' : 'c-no') + '" style="text-align:right;font-size:13px">' + sgn(r.pl) + '<br><span style="font-size:11px">' + (r.cost ? (r.pl >= 0 ? '+' : '−') + Math.abs(r.pl / r.cost * 100).toFixed(1) + '%' : '') + '</span></span>' +
+          '<span class="right">' + action + '</span>' +
+          '<span class="pm-only mono"><span>' + cents(r.avg) + ' → ' + cents(r.now) + '</span><span>' + usd(r.value) + '</span><span class="' + (r.pl >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(r.pl) + '</span></span>' +
+          '</div>';
+      }
+      h += '</div>';
+    }
+  } else if (S.ptab === 'orders') {
+    h += openOrders.length
+      ? '<div class="pf-tools"><span class="mut" style="font-size:13px">' + openOrders.length + ' open order' + (openOrders.length > 1 ? 's' : '') + ' · ' + usd(held) + ' held</span><div class="grow"></div><button class="btn" data-act="cancelall">Cancel all</button></div><div class="panel" style="padding:4px 16px"><div class="olist">' + openOrders.map(orderRow).join('') + '</div></div>'
+      : '<div class="empty">No open orders. Limit orders you place ("Set your odds") wait here until they fill, expire or you cancel them.</div>';
+  } else {
+    const groups = [['all', 'All'], ['trades', 'Trades'], ['orders', 'Orders'], ['failed', 'Failed & cancelled'], ['transfers', 'Deposits, withdrawals & claims']];
+    const failed = ['Rejected', 'Cancelled', 'Expired', 'Refunded', 'Voided'];
+    const list = S.act.filter((a) => S.htype === 'all' || (S.htype === 'failed' ? failed.includes(a.kind) : ACT_GROUP[a.kind] === S.htype));
+    h += '<div class="filters" role="group" aria-label="History type" data-x="history">' + groups.map(([k, l]) => '<button class="chip" data-act="htype" data-v="' + k + '" aria-pressed="' + (S.htype === k) + '">' + l + '</button>').join('') + '</div>';
+    h += list.length ? '<div class="ptable">' + list.map((a) => {
+      const m = a.mid ? mk(a.mid) : null;
+      return '<div class="hrow"><span class="mono mut">' + clock(BASE + a.t) + '</span><span><span class="badge ' + ACT_BADGE[a.kind] + '"><i></i>' + a.kind.toUpperCase() + '</span></span>' +
+        '<span class="htext">' + a.text + (m ? ' <button class="hlink" data-act="open" data-id="' + m.id + '">$' + m.tick + '</button>' : '') + '</span>' +
+        '<span class="mono" style="text-align:right;' + (a.amt == null ? '' : 'color:' + (a.amt >= 0 ? 'var(--yes)' : 'var(--tx)')) + '">' + (a.amt == null ? '—' : (a.amt >= 0 ? '+' : '−') + usd(Math.abs(a.amt)).replace('−', '')) + '</span></div>';
+    }).join('') + '</div>' : '<div class="empty">Nothing here yet.</div>';
+  }
   $('#view').innerHTML = h;
+  const si = $('#psearch'); if (refocus && si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
+}
+function transferModal(kind) {
+  S.tkind = kind; S.terr = '';
+  const md = $('#modal');
+  const dep = kind === 'deposit';
+  const max = dep ? S.walletUsdc : S.bal;
+  md.innerHTML = '<div class="box" role="dialog" aria-modal="true" aria-label="' + (dep ? 'Deposit' : 'Withdraw') + '">' +
+    '<h2 class="h2">' + (dep ? 'DEPOSIT USDC' : 'WITHDRAW USDC') + '</h2>' +
+    '<p class="mut" style="font-size:13px">' + (dep ? 'Move USDC from your wallet (' + S.wallet + ') into Burbit so you can trade.' : 'Send USDC from Burbit back to your wallet (' + S.wallet + '). Money held in open orders stays until you cancel them.') + '</p>' +
+    '<div class="kfield"><label for="tamt">Amount</label><div class="kin"><span class="mono mut">$</span><input id="tamt" inputmode="decimal" autocomplete="off" value=""><button class="btn ghost" style="height:28px;padding:0 8px;font-size:12px" data-act="tmax">Max</button></div></div>' +
+    '<span class="kline" style="margin-top:0">' + (dep ? 'In your wallet: ' : 'Available to withdraw: ') + '<span class="mono">' + usd(max) + '</span></span>' +
+    '<span class="err" id="terr" role="alert"></span>' +
+    '<button class="cta" style="background:var(--cur)" data-act="transfer">' + (dep ? 'Deposit' : 'Withdraw') + '</button>' +
+    '<button class="btn ghost" data-act="mclose">Cancel</button>' +
+    '<span class="note">Demo only: no real USDC moves. Deposits and withdrawals are free.</span></div>';
+  md.hidden = false;
+  md.onclick = (e) => { if (e.target === md) md.hidden = true; };
+  setTimeout(() => { const i = $('#tamt'); if (i) i.focus(); }, 0);
+}
+function doTransfer() {
+  const dep = S.tkind === 'deposit';
+  const amt = Math.round((parseFloat(($('#tamt') || {}).value) || 0) * 100) / 100;
+  const max = dep ? S.walletUsdc : S.bal;
+  const err = amt <= 0 ? 'Enter an amount.' : amt > max + 1e-9 ? (dep ? 'Your wallet only has ' + usd(max) + '.' : 'You can withdraw up to ' + usd(max) + '.') : '';
+  if (err) { $('#terr').textContent = err; return; }
+  if (dep) { S.walletUsdc -= amt; S.bal += amt; S.deposited += amt; } else { S.walletUsdc += amt; S.bal -= amt; S.deposited -= amt; }
+  logAct(dep ? 'Deposit' : 'Withdraw', null, (dep ? 'Deposited from ' : 'Withdrew to ') + S.wallet, dep ? amt : -amt);
+  $('#modal').hidden = true;
+  toast((dep ? 'Deposited ' : 'Withdrew ') + '<span class="mono">' + usd(amt) + '</span> ' + (dep ? 'into Burbit.' : 'to your wallet.'), dep ? 'yes' : 'info');
+  samplePV(); renderTop(); refresh();
+}
+
+/* ---------- home side panel: a compact portfolio summary ---------- */
+function sidePositions() {
+  if (!S.wallet) return '<section style="display:flex;flex-direction:column;gap:12px"><h2 class="h2">YOUR PORTFOLIO</h2><div class="pcard" style="gap:10px"><span class="mut" style="font-size:13px">Connect a wallet to see positions and trade.</span><button class="btn solid-tx" data-act="wallet">Connect wallet</button></div></section>';
+  const rows = posRows(), live = rows.filter((r) => !r.settled), claimAmt = toClaim(), pv = pvNow(), plAll = pv - S.deposited;
+  let h = '<section style="display:flex;flex-direction:column;gap:12px" data-x="pos">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="h2">YOUR PORTFOLIO</h2><button class="hlink" data-act="nav" data-v="port">View all →</button></div>' +
+    '<div class="pcard" style="gap:8px"><div style="display:flex;justify-content:space-between;width:100%;align-items:flex-end"><div style="display:flex;flex-direction:column"><span class="lbl">Portfolio</span><b class="mono" style="font-size:20px;font-weight:500">' + usd(pv) + '</b><span class="mono ' + (plAll >= 0 ? 'c-yes' : 'c-no') + '" style="font-size:11px">' + sgn(plAll) + ' all time</span></div><div style="display:flex;flex-direction:column;align-items:flex-end"><span class="lbl">Available</span><b class="mono" style="font-size:14px;font-weight:500">' + usd(S.bal) + '</b></div></div></div>';
+  if (claimAmt > 0) h += '<button class="pcard pf-claimline" data-act="gotoclaims"><span style="display:flex;justify-content:space-between;width:100%;align-items:center"><span style="font-size:13px"><b class="c-cur">' + usd(claimAmt) + '</b> to claim from settled markets</span><span class="c-cur" style="font-weight:600;font-size:12px">Claim →</span></span></button>';
+  if (live.length) h += live.sort((a, b) => b.value - a.value).slice(0, 4).map((r) => '<button class="pcard" data-act="open" data-id="' + r.id + '"><span style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span class="mono" style="font-weight:600">$' + r.m.tick + ' <span class="' + (r.side === 'yes' ? 'c-yes' : 'c-no') + '">' + r.n + ' ' + r.side.toUpperCase() + '</span></span>' + badge(r.m) + '</span><span style="font-size:13px;color:var(--tx2)">' + question(r.m) + '</span><span class="mono" style="display:flex;justify-content:space-between;width:100%;font-size:12px"><span>' + cents(r.avg) + ' → ' + cents(r.now) + '</span><span class="' + (r.pl >= 0 ? 'c-yes' : 'c-no') + '">' + sgn(r.pl) + '</span></span></button>').join('');
+  else h += '<div class="empty" style="padding:16px;font-size:13px">No open positions yet.</div>';
+  return h + '</section>';
 }
 
 /* ---------- how it works ---------- */
@@ -1456,7 +1636,10 @@ const EX = {
   openrug: ['Open rug market', 'Anyone can take either side; it settles from the creator\'s token balance. The creator could decide it from a second wallet, so its maximum size stays small ($75) and the app labels it.'],
   wallet: ['Wallet and balance', 'USDC moves from your wallet into the market\'s vault in the same transaction as your trade. Every share is backed 1:1 by USDC in that vault, and Burbit can\'t touch it.'],
   void: ['Void', 'If a launchpad changes its account layout and Burbit can\'t read it, the market fails safe: every YES and NO share redeems for 50¢, so each pair gets its full $1 back.'],
-  portfolio: ['Portfolio', 'Open positions, all your orders and their outcomes, and winnings to claim once markets settle.']
+  pl: ['Profit/Loss', 'How your portfolio value changed over the chosen time range, counting cash, money held in open orders and your positions at the current price. Deposits and withdrawals are not counted as profit.'],
+  claims: ['Claims', 'When a market settles, each winning share is worth $1 and waits here until you claim it. Voided markets return 50¢ per share. Claiming moves the money into your available balance.'],
+  history: ['History', 'Everything you did: trades, limit orders and what happened to them, failed or cancelled orders, merges, claims, deposits and withdrawals.'],
+  portfolio: ['Portfolio', 'Your total value (cash + money held in orders + positions at today\'s price), what you can trade with right now, and buttons to deposit or withdraw USDC. Positions, open orders and history are in the tabs below.']
 };
 function showX(key) {
   const e = EX[key]; if (!e) return;
@@ -1508,7 +1691,7 @@ document.addEventListener('click', (e) => {
     case 'spreset': T.shares = v; updateMarket(true); break;
     case 'side': T.side = v; T.err = ''; T.review = false; T.priceC = defaultPriceC(mk(S.mid), T.act, v); if (T.act === 'sell' && mk(S.mid)) T.shares = String(held(mk(S.mid), v) || ''); updateMarket(true); break;
     case 'mside': T.side = v; T.act = 'buy'; T.tab = 'dollars'; T.review = false; updateMarket(true); $('#r-ticket').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
-    case 'review': { const m0 = mk(S.mid); const err = m0 ? validate(m0) : ''; T.err = err; T.review = !err; updateMarket(false); break; }
+    case 'review': { const m0 = mk(S.mid); const err = m0 ? validate(m0) : ''; T.err = err; T.review = !err; if (err) logAct('Rejected', S.mid, 'Order rejected: ' + err.replace(/\.$/, ''), null); updateMarket(false); break; }
     case 'editorder': T.review = false; updateMarket(false); break;
     case 'preset': T.amount = v; const ai = $('#amt'); if (ai) ai.value = v; updateMarket(false); break;
     case 'submit': submit(); break;
@@ -1525,14 +1708,25 @@ document.addEventListener('click', (e) => {
     case 'dx': demoAction(v); break;
     case 'spawn': spawn(); refresh(); break;
     case 'reset': init(); go('feed'); toast('Demo reset.', 'mut'); break;
-    case 'pickwallet': S.wallet = v; $('#modal').hidden = true; renderTop(); go(S.view, S.mid); toast('Connected ' + v + '. Demo wallet with $500 USDC on devnet; nothing real is touched.', 'yes'); break;
+    case 'pickwallet': S.wallet = v; seedPV(); $('#modal').hidden = true; renderTop(); go(S.view, S.mid); toast('Connected ' + v + '. Demo wallet with $500 USDC on devnet; nothing real is touched.', 'yes'); break;
     case 'disconnect': S.wallet = null; $('#modal').hidden = true; renderTop(); go(S.view, S.mid); break;
     case 'mclose': $('#modal').hidden = true; break;
+    case 'ptab': S.ptab = v; renderPort(); break;
+    case 'prange': S.prange = v; renderPort(); break;
+    case 'htype': S.htype = v; renderPort(); break;
+    case 'transfer-open': transferModal(v); break;
+    case 'transfer': doTransfer(); break;
+    case 'tmax': { const i = $('#tamt'); if (i) i.value = (S.tkind === 'deposit' ? S.walletUsdc : S.bal).toFixed(2); break; }
+    case 'gotoclaims': S.ptab = 'positions'; S.psort = 'settle'; go('port'); break;
+    case 'cancelall': S.orders.filter((o) => ['open', 'partial', 'queued'].includes(o.status)).forEach((o) => cancel(o.id)); break;
+    case 'sellpos': { go('market', id); const m0 = mk(id); T.act = 'sell'; T.side = v; T.tab = 'shares'; T.review = false; T.shares = String(held(m0, v) || ''); updateMarket(true); break; }
   }
 });
 document.addEventListener('input', (e) => {
   const t = e.target;
   if (t.id === 'q') { S.q = t.value; if (S.view !== 'feed') go('feed'); else renderFeed(); const q = $('#q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); return; }
+  if (t.id === 'psearch') { S.psearch = t.value; renderPort(); return; }
+  if (t.id === 'tamt') { const e2 = $('#terr'); if (e2) e2.textContent = ''; return; }
   if (t.id === 'amt') T.amount = t.value;
   else if (t.id === 'lpc') T.priceC = t.value.replace(/[^0-9.]/g, '');
   else if (t.id === 'ls') T.shares = t.value;
@@ -1544,11 +1738,13 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', (e) => {
   if (e.target.id === 'otype') { T.tab = e.target.value; T.err = ''; T.review = false; T.priceC = defaultPriceC(mk(S.mid), T.act, T.side); updateMarket(true); }
+  if (e.target.id === 'psort') { S.psort = e.target.value; renderPort(); return; }
   if (e.target.id === 'exp') { T.exp = e.target.value; renderTicketSum(mk(S.mid)); }
   if (e.target.id === 'po') { T.postOnly = e.target.checked; T.err = ''; renderTicketSum(mk(S.mid)); }
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { $('#xd').hidden = true; $('#modal').hidden = true; if (S.demo) { S.demo = false; $('#demo').hidden = true; $('#demoBtn').setAttribute('aria-expanded', 'false'); } }
+  if (e.key === 'Enter' && e.target.id === 'tamt') doTransfer();
   if (e.key === 'Enter' && e.target.closest && e.target.closest('#r-tform') && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') submit();
 });
 
@@ -1562,6 +1758,7 @@ function sellShares(m, side, n, lead) {
   if (side === 'yes') { p.cy -= p.cy / p.yes * n; p.yes -= n; } else { p.cn -= p.cn / p.no * n; p.no -= n; }
   m.volSol += n * px * U;
   m.trades.unshift({ t: S.t, side: 'SELL ' + side.toUpperCase(), p: px, n, kind: merge ? 'MERGE' : 'TRANSFER', you: true });
+  logAct('Sell', m.id, 'Sold ' + n + ' ' + side.toUpperCase() + ' at ' + cents(px) + ' (fee ' + usd(fee) + ')', got);
   toast((lead ? lead + ' ' : '') + 'Sold <span class="mono">' + n + ' ' + side.toUpperCase() + '</span> at ' + cents(px) + ' for <span class="mono">' + usd(got) + '</span> (' + (merge ? 'merged with a ' + (side === 'yes' ? 'NO' : 'YES') + ' seller: the pair was burned' : 'another trader bought them') + ').', 'info');
 }
 function sell(side) { const m = mk(S.mid); if (!m) return; sellShares(m, side, Infinity); refresh(); }
@@ -1572,11 +1769,13 @@ function merge() {
   p.yes -= n; p.no -= n; p.cy -= fy * n; p.cn -= fn * n;
   S.bal += n * U; m.oi = Math.max(0, m.oi - n * U);
   m.trades.unshift({ t: S.t, side: 'MERGE', p: 1, n, kind: 'MERGE', you: true });
+  logAct('Merge', m.id, 'Merged ' + n + ' YES+NO pairs back into USDC', n * U);
   toast('Merged <span class="mono">' + n + '</span> YES+NO pairs back into <span class="mono">' + usd((n * U)) + '</span>. Free, no fee.', 'info');
   refresh();
 }
 function cancel(id) {
   const o = S.orders.find((x) => x.id === id); if (!o) return;
+  logAct('Cancelled', o.mid, 'Cancelled ' + o.act.toUpperCase() + ' ' + (o.shares - o.filled) + ' ' + o.side.toUpperCase() + ' @ ' + cents(o.price), null);
   const back = release(o); o.status = 'cancelled';
   toast('Order cancelled: <span class="mono">' + back + '</span>.', 'mut');
   refresh();
@@ -1585,6 +1784,7 @@ function claim(id, quiet) {
   const m = mk(id), p = S.pos[id]; if (!m || !p) return;
   const pay = payout(m, p); if (pay <= 0) return;
   S.bal += pay; p.claimed = true; p.claimedAmt = pay;
+  logAct('Claim', id, (m.state === 'void' ? 'Redeemed voided shares' : 'Claimed winnings (' + m.outcome.toUpperCase() + ')'), pay);
   if (!quiet) toast('Claimed <span class="mono">' + usd(pay) + '</span> from $' + m.tick + '.', 'yes');
   if (!quiet) refresh();
 }

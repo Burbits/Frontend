@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
-import { S, ui } from '../../sim/engine'
+import { S, portfolio, ui } from '../../sim/engine'
 import { useSim } from '../../sim/useSim'
-import { DemoButton, DemoPanel, ExplainDrawer, Toasts, WalletModal } from '../burbit/overlays'
+import { DemoButton, DemoPanel, ExplainDrawer, Toasts, TransferModal, WalletModal } from '../burbit/overlays'
 import BottomTabs from './BottomTabs'
 import SideRail from './SideRail'
 import TopBar from './TopBar'
@@ -27,11 +27,12 @@ export default function AppShell() {
     return () => document.removeEventListener('click', onClick, true)
   }, [explain])
 
-  // Escape closes the wallet popup, the explain box and the demo panel.
+  // Escape closes the wallet and transfer popups, the explain box and the demo panel.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       ui.closeWallet()
+      if (S.transfer) portfolio.closeTransfer()
       ui.showExplain(null)
       if (S.demo) ui.closeDemo()
     }
@@ -55,6 +56,7 @@ export default function AppShell() {
       <DemoPanel />
       <ExplainDrawer />
       <WalletModal />
+      <TransferModal />
     </div>
   )
 }
